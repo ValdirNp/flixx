@@ -1,0 +1,27 @@
+{
+  "name": "flixx",
+  "version": "1.0.0",
+  "description": "React app to find suggestions of movies or series",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ValdirNp/flixx.git"
+  },
+  "author": "Valdir Pereira",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ValdirNp/flixx/issues"
+  },
+  "homepage": "https://github.com/ValdirNp/flixx#readme",
+  "devDependencies": {
+    "@babel/cli": "^7.11.6",
+    "@babel/core": "^7.11.6",
+    "@babel/preset-react": "^7.10.4"
+  },
+  "dependencies": {
+    "@material-ui/core": "^4.11.0"
+  }
+}
