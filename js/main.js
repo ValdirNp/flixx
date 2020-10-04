@@ -1,4 +1,8 @@
 const {
+    API_KEY,
+} = process.env;
+
+const {
     Container,
     makeStyles,
     createMuiTheme,
@@ -59,7 +63,8 @@ function SuggestionButton(props) {
 function SuggestionResult(props) {
     return (
         <div>
-            <p>{ props.movie.name }</p>
+            <p>{ props.movie.original_title }</p>
+            <p>{ props.movie.overview }</p>
         </div>
     );
 }
@@ -67,36 +72,50 @@ function SuggestionResult(props) {
 function Footer() {
     return (
         <Container maxWidth="sm">
-            <Typography variant="body1">Made with ❤ by <a href="https://valdirnp.dev" target="_blank" title="Valdir Pereira">Valdir Pereira</a> using ⚛ and <a href="https://www.themoviedb.org/" target="_blank" title="The Movie Database">The Movie Database</a>.</Typography>
+            <Typography variant="body1">Made with ❤ by <a href="https://valdirnp.dev" target="_blank" title="Valdir Pereira">Valdir Pereira</a> using ⚛ and <a href="https://www.themoviedb.org/" target="_blank" title="The Movie Database">The Movie Database</a>. © 2020</Typography>
         </Container>
     );
+}
+
+function getRandomNumber(bottom, top) {
+    return Math.floor( Math.random() * ( 1 + top - bottom ) ) + bottom;
 }
 
 function App() {
     const classes = useStyles();
     const [suggestedMovie, updateSuggestedMovie] = React.useState({ name: '' });
+    const minYear = 1900;
+    const maxYear = 2020;
+    const apiUrl = 'https://api.themoviedb.org/3/discover/movie';
 
     const getSuggestion = function() {
-        let listOfMovies = [
-            {
-                'name': 'Enola Holmes',
-                'year': '2020'
-            },
-            {
-                'name': 'Spider-Man: Into the Spider-Verse',
-                'year': '2018'
-            },
-            {
-                'name': 'El laberinto del fauno',
-                'year': '2006'
-            },
-            {
-                'name': 'The Babysitter',
-                'year': '2017'
-            },
-        ];
-        let newSuggestedMovie = listOfMovies[Math.floor(Math.random() * listOfMovies.length)];
-        updateSuggestedMovie(newSuggestedMovie);
+        let randomYear = getRandomNumber(minYear, maxYear);
+        let page = getRandomNumber(1, 5);
+
+        let params = {
+            api_key: API_KEY,
+            language: 'en-US',
+            sort_by: 'popularity.desc',
+            include_adult: false,
+            include_video: false,
+            page: page,
+            year: randomYear,
+        };
+
+        let url = apiUrl + '?' + new URLSearchParams(params).toString();
+
+        fetch(url)
+            .then(res => res.json())
+            .then(
+                (result) => {
+                    let listOfMovies = result.results;
+                    let newSuggestedMovie = listOfMovies[Math.floor(Math.random() * listOfMovies.length)];
+                    updateSuggestedMovie(newSuggestedMovie);
+                },
+                (error) => {
+                    console.log(error)
+                }
+            )
     }
 
     return (
