@@ -394,7 +394,7 @@ function App() {
             'sort_by': sortOptions[Math.floor(Math.random() * sortOptions.length)],
             'include_adult': false,
             'include_video': false,
-            'page': page,
+            'page': 1,
             'primary_release_year': year,
         };
 
