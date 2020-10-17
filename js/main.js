@@ -258,45 +258,43 @@ function SuggestionResult(props) {
     if (props.movie.title !== '') {
         return (
             <Grid item xs={12}>
-                <CardActionArea component="a" href="#">
-                    <Card className={classes.card}>
-                        <Hidden xsDown>
-                            <CardMedia className={classes.cardMedia} image={ props.movie.poster } title="imageTitle" />
-                        </Hidden>
-                        <div className={classes.cardDetails}>
-                            <CardContent>
-                                <Typography component="h2" variant="h5">
-                                    { props.movie.title }
-                                </Typography>
-                                <Typography variant="subtitle1" color="textSecondary">
-                                    Nome Original: { props.movie.original_title }
-                                </Typography>
-                                <Typography variant="subtitle1" color="textSecondary">
-                                    Lançamento: { props.movie.release_year }
-                                </Typography>
-                                <Typography variant="subtitle1" color="textSecondary">
-                                    Nota média: { props.movie.vote_average }
-                                </Typography>
-                                <Typography variant="subtitle1" color="textSecondary">
-                                    Gêneros: { props.movie.genres }
-                                </Typography>
-                                <Typography variant="subtitle1" paragraph>
-                                    { props.movie.overview }
-                                </Typography>
+                <Card className={classes.card}>
+                    <Hidden xsDown>
+                        <CardMedia className={classes.cardMedia} image={ props.movie.poster } title="imageTitle" />
+                    </Hidden>
+                    <div className={classes.cardDetails}>
+                        <CardContent>
+                            <Typography component="h2" variant="h5">
+                                { props.movie.title }
+                            </Typography>
+                            <Typography variant="subtitle1" color="textSecondary">
+                                Nome Original: { props.movie.original_title }
+                            </Typography>
+                            <Typography variant="subtitle1" color="textSecondary">
+                                Lançamento: { props.movie.release_year }
+                            </Typography>
+                            <Typography variant="subtitle1" color="textSecondary">
+                                Nota média: { props.movie.vote_average }
+                            </Typography>
+                            <Typography variant="subtitle1" color="textSecondary">
+                                Gêneros: { props.movie.genres }
+                            </Typography>
+                            <Typography variant="subtitle1" paragraph>
+                                { props.movie.overview }
+                            </Typography>
 
-                                { props.movie.netflix_button ? 
-                                    <Button variant="contained" className={classes.netflixButton} href={ props.movie.homepage } target="_blank" >Ver na Netflix</Button>
-                                    : <span></span>
-                                } 
+                            { props.movie.netflix_button ? 
+                                <Button variant="contained" className={classes.netflixButton} href={ props.movie.homepage } target="_blank" >Ver na Netflix</Button>
+                                : <span></span>
+                            } 
 
-                                { props.movie.imdb_id ? 
-                                    <Button variant="contained" className={classes.imdbButton} href={ "https://www.imdb.com/title/" + props.movie.imdb_id } target="_blank" >Página do IMDb</Button>
-                                    : <span></span>
-                                }                                
-                            </CardContent>
-                        </div>                    
-                    </Card>
-                </CardActionArea>
+                            { props.movie.imdb_id ? 
+                                <Button variant="contained" className={classes.imdbButton} href={ "https://www.imdb.com/title/" + props.movie.imdb_id } target="_blank" >Página do IMDb</Button>
+                                : <span></span>
+                            }                                
+                        </CardContent>
+                    </div>                    
+                </Card>
             </Grid>
         );
     } else {
@@ -370,17 +368,34 @@ function App() {
             maxYear = years[1];
         }
 
-        let randomYear = getRandomNumber(minYear, maxYear);
-        let page = getRandomNumber(1, 1);
+        let page = getRandomNumber(1, 5);
+        let year = getRandomNumber(minYear, maxYear);
+
+        let sortOptions = [
+            'popularity.asc',
+            'popularity.desc',
+            'release_date.asc',
+            'release_date.desc',
+            'revenue.asc',
+            'revenue.desc',
+            'primary_release_date.asc',
+            'primary_release_date.desc',
+            'original_title.asc',
+            'original_title.desc',
+            'vote_average.asc',
+            'vote_average.desc',
+            'vote_count.asc',
+            'vote_count.desc',
+        ];
 
         let params = {
-            api_key: API_KEY,
-            language: 'pt-BR',
-            sort_by: 'popularity.desc',
-            include_adult: false,
-            include_video: false,
-            page: page,
-            year: randomYear,
+            'api_key': API_KEY,
+            'language': 'pt-BR',
+            'sort_by': sortOptions[Math.floor(Math.random() * sortOptions.length)],
+            'include_adult': false,
+            'include_video': false,
+            'page': page,
+            'primary_release_year': year,
         };
 
         if (selectedGenres.length > 0) {
@@ -395,6 +410,7 @@ function App() {
                 (result) => {
                     let listOfMovies = result.results;
                     let itemSelected = listOfMovies[Math.floor(Math.random() * listOfMovies.length)];
+                    console.log(itemSelected)
                     let movieId = itemSelected.id;
 
                     getMovieDetails(movieId);
