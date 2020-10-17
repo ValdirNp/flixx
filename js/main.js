@@ -157,7 +157,7 @@ function App() {
             api_key: API_KEY,
             language: 'pt-BR'
         };
-        id = 497582
+
         let url = movieDetailsUrl + '/' + id + '?' + new URLSearchParams(params).toString();
 
         fetch(url)
