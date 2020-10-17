@@ -18,6 +18,12 @@ const {
     CardContent,
     Hidden,
     CardMedia,
+    Divider,
+    TextField,
+    Accordion,
+    AccordionSummary,
+    ExpandMoreIcon,
+    AccordionDetails,
 } = MaterialUI;
 
 const theme = createMuiTheme({
@@ -55,8 +61,7 @@ const useStyles = makeStyles(theme => ({
     },
     card: {
         display: 'flex',
-        minHeight: '60vh',
-        marginTop: '50px',
+        minHeight: '60vh'
     },
     cardDetails: {
         flex: 1,
@@ -66,6 +71,10 @@ const useStyles = makeStyles(theme => ({
     },
     netflixButton: {
         background: '#E50914'
+    },
+    divider: {
+        marginTop: '25px',
+        marginBottom: '25px',
     }
 }));
 
@@ -76,6 +85,12 @@ function Title() {
                 Flixx
             </Typography>
         </Box>        
+    );
+}
+
+function Filters() {
+    return (
+        <div></div>
     );
 }
 
@@ -135,7 +150,7 @@ function SuggestionResult(props) {
 function Footer() {
     return (
         <Container maxWidth="sm">
-            <Typography variant="body1">Made with ❤ by <a href="https://valdirnp.dev" target="_blank" title="Valdir Pereira">Valdir Pereira</a> using ⚛ and <a href="https://www.themoviedb.org/" target="_blank" title="The Movie Database">The Movie Database</a>. © 2020</Typography>
+            <Typography variant="body1">Made with ❤ by <a href="#" target="_blank" title="Valdir Pereira">Valdir Pereira</a> using ⚛ and <a href="https://www.themoviedb.org/" target="_blank" title="The Movie Database">The Movie Database</a>. © 2020</Typography>
         </Container>
     );
 }
@@ -224,7 +239,9 @@ function App() {
             <CssBaseline />
             <Container component="main" className={ classes.main } maxWidth="md" >
                 <Title />
+                <Filters />
                 <SuggestionButton getSuggestion={ getSuggestion } />
+                <Divider className={classes.divider} />
                 <SuggestionResult movie={ suggestedMovie } />
             </Container>
             <footer className={ classes.footer }>
