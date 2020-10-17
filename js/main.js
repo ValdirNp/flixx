@@ -20,10 +20,12 @@ const {
     CardMedia,
     Divider,
     TextField,
-    Accordion,
-    AccordionSummary,
-    ExpandMoreIcon,
-    AccordionDetails,
+    FormControl,
+    InputLabel,
+    Input,
+    Select,
+    MenuItem,
+    Slider,
 } = MaterialUI;
 
 const theme = createMuiTheme({
@@ -75,7 +77,12 @@ const useStyles = makeStyles(theme => ({
     divider: {
         marginTop: '25px',
         marginBottom: '25px',
-    }
+    },
+    formControl: {
+        margin: theme.spacing(1),
+        minWidth: 400,
+        maxWidth: 700,
+    },
 }));
 
 function Title() {
@@ -88,9 +95,153 @@ function Title() {
     );
 }
 
-function Filters() {
+function Filters(props) {
+    const classes = useStyles();
+
+    const ITEM_HEIGHT = 48;
+    const ITEM_PADDING_TOP = 8;
+    const MenuProps = {
+        PaperProps: {
+            style: {
+                maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+                width: 250,
+            },
+        },
+    };
+
+    selectGenre = props.selectGenre;
+    setYears = props.setYears;
+
+    const handleGenreChange = (event) => {
+        selectGenre(event.target.value);
+    };
+
+    const handleYearsChange = (event, newValue) => {
+        setYears(newValue);
+      };
+
+    const getStyles = (name, genres, theme) => {
+        return {
+            fontWeight:
+                genres.indexOf(name) === -1
+                ? theme.typography.fontWeightRegular
+                : theme.typography.fontWeightMedium,
+        };
+    };
+
+    const genres = [
+          {
+            "id": 28,
+            "name": "Ação"
+          },
+          {
+            "id": 12,
+            "name": "Aventura"
+          },
+          {
+            "id": 16,
+            "name": "Animação"
+          },
+          {
+            "id": 35,
+            "name": "Comédia"
+          },
+          {
+            "id": 80,
+            "name": "Crime"
+          },
+          {
+            "id": 99,
+            "name": "Documentário"
+          },
+          {
+            "id": 18,
+            "name": "Drama"
+          },
+          {
+            "id": 10751,
+            "name": "Família"
+          },
+          {
+            "id": 14,
+            "name": "Fantasia"
+          },
+          {
+            "id": 36,
+            "name": "História"
+          },
+          {
+            "id": 27,
+            "name": "Terror"
+          },
+          {
+            "id": 10402,
+            "name": "Música"
+          },
+          {
+            "id": 9648,
+            "name": "Mistério"
+          },
+          {
+            "id": 10749,
+            "name": "Romance"
+          },
+          {
+            "id": 878,
+            "name": "Ficção científica"
+          },
+          {
+            "id": 10770,
+            "name": "Cinema TV"
+          },
+          {
+            "id": 53,
+            "name": "Thriller"
+          },
+          {
+            "id": 10752,
+            "name": "Guerra"
+          },
+          {
+            "id": 37,
+            "name": "Faroeste"
+          }
+        ];
+
     return (
-        <div></div>
+        <div>
+            <FormControl className={classes.formControl}>
+                <Typography id="gender-label" gutterBottom>Gêneros</Typography>
+                <Select
+                    labelId="gender-label"
+                    id="gender"
+                    multiple
+                    value={props.selectedGenres}
+                    onChange={handleGenreChange}
+                    input={<Input />}
+                    MenuProps={MenuProps}
+                >
+                    {genres.map((genre) => (
+                        <MenuItem key={genre.id} value={genre.id} style={getStyles(genre.name, props.selectedGenres, theme)}>
+                            {genre.name}
+                        </MenuItem>
+                    ))}
+                </Select>
+            </FormControl>
+            <FormControl className={classes.formControl}>
+                <Typography id="years-label" gutterBottom>Entre os anos</Typography>
+                <Slider
+                    labelId="years-label"
+                    value={props.years}
+                    onChange={handleYearsChange}
+                    valueLabelDisplay="auto"
+                    aria-labelledby="range-slider"
+                    min={1900}
+                    step={1}
+                    max={2020}
+                />
+            </FormControl>
+        </div>
     );
 }
 
@@ -162,8 +313,9 @@ function getRandomNumber(bottom, top) {
 function App() {
     const classes = useStyles();
     const [suggestedMovie, updateSuggestedMovie] = React.useState({ title: '' });
-    const minYear = 1900;
-    const maxYear = 2020;
+    const [selectedGenres, selectGenre] = React.useState([]);
+    const [years, setYears] = React.useState([1900, 2020]);
+    
     const discoverUrl = 'https://api.themoviedb.org/3/discover/movie';
     const movieDetailsUrl = 'https://api.themoviedb.org/3/movie';
 
@@ -172,6 +324,7 @@ function App() {
             api_key: API_KEY,
             language: 'pt-BR'
         };
+
         let url = movieDetailsUrl + '/' + id + '?' + new URLSearchParams(params).toString();
 
         fetch(url)
@@ -190,7 +343,7 @@ function App() {
                         newSuggestedMovie.poster = "https://image.tmdb.org/t/p/w300/" + newSuggestedMovie.poster_path
                     }
 
-                    if (newSuggestedMovie.homepage.includes("https://www.netflix.com/title")) {
+                    if (newSuggestedMovie.homepage && newSuggestedMovie.homepage.includes("https://www.netflix.com/title")) {
                         newSuggestedMovie.netflix_button = true;
                     }
 
@@ -203,8 +356,16 @@ function App() {
     }
 
     const getSuggestion = function() {
+        let minYear = 1900;
+        let maxYear = 2020;
+
+        if (years.length === 2) {
+            minYear = years[0];
+            maxYear = years[1];
+        }
+
         let randomYear = getRandomNumber(minYear, maxYear);
-        let page = getRandomNumber(1, 5);
+        let page = getRandomNumber(1, 1);
 
         let params = {
             api_key: API_KEY,
@@ -215,6 +376,10 @@ function App() {
             page: page,
             year: randomYear,
         };
+
+        if (selectedGenres.length > 0) {
+            params.with_genres = selectedGenres.join(',');
+        }
 
         let url = discoverUrl + '?' + new URLSearchParams(params).toString();
 
@@ -239,7 +404,7 @@ function App() {
             <CssBaseline />
             <Container component="main" className={ classes.main } maxWidth="md" >
                 <Title />
-                <Filters />
+                <Filters selectedGenres={selectedGenres} selectGenre={selectGenre} years={years} setYears={setYears} />
                 <SuggestionButton getSuggestion={ getSuggestion } />
                 <Divider className={classes.divider} />
                 <SuggestionResult movie={ suggestedMovie } />
