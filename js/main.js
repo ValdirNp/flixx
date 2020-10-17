@@ -216,7 +216,6 @@ function Filters(props) {
             <FormControl className={classes.formControl}>
                 <Typography id="gender-label" gutterBottom>Gêneros</Typography>
                 <Select
-                    labelId="gender-label"
                     id="gender"
                     multiple
                     value={props.selectedGenres}
@@ -234,7 +233,6 @@ function Filters(props) {
             <FormControl className={classes.formControl}>
                 <Typography id="years-label" gutterBottom>Entre os anos</Typography>
                 <Slider
-                    labelId="years-label"
                     value={props.years}
                     onChange={handleYearsChange}
                     valueLabelDisplay="auto"
