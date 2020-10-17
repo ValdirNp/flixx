@@ -410,7 +410,6 @@ function App() {
                 (result) => {
                     let listOfMovies = result.results;
                     let itemSelected = listOfMovies[Math.floor(Math.random() * listOfMovies.length)];
-                    console.log(itemSelected)
                     let movieId = itemSelected.id;
 
                     getMovieDetails(movieId);
