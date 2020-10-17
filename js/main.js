@@ -74,6 +74,9 @@ const useStyles = makeStyles(theme => ({
     netflixButton: {
         background: '#E50914'
     },
+    imdbButton: {
+        background: '#C3A00D'
+    },
     divider: {
         marginTop: '25px',
         marginBottom: '25px',
@@ -285,6 +288,11 @@ function SuggestionResult(props) {
 
                                 { props.movie.netflix_button ? 
                                     <Button variant="contained" className={classes.netflixButton} href={ props.movie.homepage } target="_blank" >Ver na Netflix</Button>
+                                    : <span></span>
+                                } 
+
+                                { props.movie.imdb_id ? 
+                                    <Button variant="contained" className={classes.imdbButton} href={ "https://www.imdb.com/title/" + props.movie.imdb_id } target="_blank" >Página do IMDb</Button>
                                     : <span></span>
                                 }                                
                             </CardContent>
