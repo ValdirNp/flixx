@@ -1,8 +1,4 @@
-const webpack = require('webpack');
 const path = require('path');
-const dotenv = require('dotenv').config( {
-    path: path.join(__dirname, '.env')
-  } );
 
 module.exports = {
     entry: "./js/main.js",
@@ -22,11 +18,4 @@ module.exports = {
             },
         ]
     },
-    plugins: [
-        new webpack.DefinePlugin( {
-            'process.env': {
-                API_KEY: JSON.stringify(process.env.API_KEY)
-            },
-        }),
-    ],
 };

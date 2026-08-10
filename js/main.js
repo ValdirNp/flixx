@@ -1,8 +1,4 @@
 const {
-    API_KEY,
-} = process.env;
-
-const {
     Container,
     makeStyles,
     createMuiTheme,
@@ -848,12 +844,11 @@ function App() {
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = React.useState('');
 
-    const discoverUrl = 'https://api.themoviedb.org/3/discover/movie';
-    const movieDetailsUrl = 'https://api.themoviedb.org/3/movie';
+    const discoverUrl = '/api/tmdb/discover/movie';
+    const movieDetailsUrl = '/api/tmdb/movie';
 
     const getMovieDetails = function (id) {
         const params = {
-            api_key: API_KEY,
             language: 'pt-BR',
             append_to_response: 'watch/providers',
         };
@@ -899,7 +894,6 @@ function App() {
         }
 
         const params = {
-            api_key: API_KEY,
             language: 'pt-BR',
             sort_by: SORT_OPTIONS[Math.floor(Math.random() * SORT_OPTIONS.length)],
             include_adult: false,
