@@ -6,437 +6,990 @@ const {
     Container,
     makeStyles,
     createMuiTheme,
-    colors,
     CssBaseline,
     ThemeProvider,
     Typography,
     Box,
     Button,
     Grid,
-    CardActionArea,
-    Card,
-    CardContent,
-    Hidden,
-    CardMedia,
-    Divider,
-    TextField,
     FormControl,
-    InputLabel,
-    Input,
     Select,
     MenuItem,
     Slider,
+    Chip,
+    CircularProgress,
+    Input,
 } = MaterialUI;
 
+const CURRENT_YEAR = new Date().getFullYear();
+const WATCH_REGION = 'BR';
+
+const GENRES = [
+    { id: 28, name: 'Ação' },
+    { id: 12, name: 'Aventura' },
+    { id: 16, name: 'Animação' },
+    { id: 35, name: 'Comédia' },
+    { id: 80, name: 'Crime' },
+    { id: 99, name: 'Documentário' },
+    { id: 18, name: 'Drama' },
+    { id: 10751, name: 'Família' },
+    { id: 14, name: 'Fantasia' },
+    { id: 36, name: 'História' },
+    { id: 27, name: 'Terror' },
+    { id: 10402, name: 'Música' },
+    { id: 9648, name: 'Mistério' },
+    { id: 10749, name: 'Romance' },
+    { id: 878, name: 'Ficção científica' },
+    { id: 10770, name: 'Cinema TV' },
+    { id: 53, name: 'Thriller' },
+    { id: 10752, name: 'Guerra' },
+    { id: 37, name: 'Faroeste' },
+];
+
+const STREAMING_PROVIDERS = [
+    { id: 8, name: 'Netflix', color: '#E50914' },
+    { id: 119, name: 'Prime Video', color: '#00A8E1' },
+    { id: 337, name: 'Disney+', color: '#113CCF' },
+    { id: 384, name: 'Max', color: '#002BE7' },
+    { id: 350, name: 'Apple TV+', color: '#555555' },
+    { id: 307, name: 'Globoplay', color: '#FB0234' },
+    { id: 531, name: 'Paramount+', color: '#0064FF' },
+];
+
+const SORT_OPTIONS = [
+    'popularity.desc',
+    'popularity.asc',
+    'release_date.desc',
+    'release_date.asc',
+    'vote_average.desc',
+    'vote_average.asc',
+    'vote_count.desc',
+    'primary_release_date.desc',
+    'primary_release_date.asc',
+];
+
 const theme = createMuiTheme({
+    typography: {
+        fontFamily: '"Figtree", "Helvetica", "Arial", sans-serif',
+        h1: {
+            fontFamily: '"Bebas Neue", "Impact", sans-serif',
+            letterSpacing: '0.04em',
+        },
+        h2: {
+            fontFamily: '"Bebas Neue", "Impact", sans-serif',
+            letterSpacing: '0.04em',
+        },
+        h3: {
+            fontFamily: '"Bebas Neue", "Impact", sans-serif',
+            letterSpacing: '0.03em',
+        },
+        h5: {
+            fontFamily: '"Bebas Neue", "Impact", sans-serif',
+            letterSpacing: '0.03em',
+        },
+        button: {
+            fontFamily: '"Figtree", "Helvetica", "Arial", sans-serif',
+            fontWeight: 600,
+            textTransform: 'none',
+        },
+    },
     palette: {
+        type: 'dark',
         primary: {
-            main: '#556cd6',
+            main: '#E50914',
         },
         secondary: {
-            main: '#19857b',
-        },
-        error: {
-            main: colors.red.A400,
+            main: '#D4A574',
         },
         background: {
-            default: '#000000',
+            default: '#0E0D0C',
+            paper: '#1A1816',
+        },
+        text: {
+            primary: '#F5F0E8',
+            secondary: '#9A9288',
+        },
+        error: {
+            main: '#E50914',
+        },
+    },
+    shape: {
+        borderRadius: 6,
+    },
+    overrides: {
+        MuiCssBaseline: {
+            '@global': {
+                body: {
+                    backgroundColor: '#0E0D0C',
+                },
+                '::selection': {
+                    backgroundColor: 'rgba(229, 9, 20, 0.35)',
+                },
+            },
+        },
+        MuiSlider: {
+            root: {
+                color: '#E50914',
+                height: 4,
+            },
+            thumb: {
+                height: 16,
+                width: 16,
+                backgroundColor: '#F5F0E8',
+                border: '2px solid #E50914',
+                marginTop: -6,
+                marginLeft: -8,
+                '&:focus, &:hover, &$active': {
+                    boxShadow: '0 0 0 6px rgba(229, 9, 20, 0.16)',
+                },
+            },
+            track: {
+                height: 4,
+                borderRadius: 2,
+            },
+            rail: {
+                height: 4,
+                borderRadius: 2,
+                opacity: 0.35,
+                backgroundColor: '#9A9288',
+            },
+            valueLabel: {
+                left: 'calc(-50% + 4px)',
+                '& *': {
+                    background: '#E50914',
+                    color: '#F5F0E8',
+                },
+            },
+        },
+        MuiSelect: {
+            root: {
+                color: '#F5F0E8',
+            },
+            icon: {
+                color: '#9A9288',
+            },
+        },
+        MuiInput: {
+            underline: {
+                '&:before': {
+                    borderBottomColor: 'rgba(154, 146, 136, 0.4)',
+                },
+                '&:hover:not($disabled):before': {
+                    borderBottomColor: '#D4A574',
+                },
+                '&:after': {
+                    borderBottomColor: '#E50914',
+                },
+            },
+        },
+        MuiMenuItem: {
+            root: {
+                fontFamily: '"Figtree", sans-serif',
+            },
         },
     },
 });
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((muiTheme) => ({
     root: {
+        position: 'relative',
         display: 'flex',
         flexDirection: 'column',
         minHeight: '100vh',
-        backgroundColor: theme.palette.background.default,
+        color: muiTheme.palette.text.primary,
+        backgroundColor: muiTheme.palette.background.default,
+        overflow: 'hidden',
+        '&::before': {
+            content: '""',
+            position: 'absolute',
+            inset: 0,
+            background: [
+                'radial-gradient(ellipse 90% 55% at 12% -10%, rgba(229, 9, 20, 0.22), transparent 55%)',
+                'radial-gradient(ellipse 70% 50% at 88% 8%, rgba(212, 165, 116, 0.12), transparent 50%)',
+                'radial-gradient(ellipse 60% 40% at 50% 100%, rgba(229, 9, 20, 0.08), transparent 55%)',
+                'linear-gradient(180deg, #141210 0%, #0E0D0C 45%, #090807 100%)',
+            ].join(', '),
+            zIndex: 0,
+            pointerEvents: 'none',
+        },
+        '&::after': {
+            content: '""',
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\' opacity=\'0.45\'/%3E%3C/svg%3E")',
+            opacity: 0.045,
+            mixBlendMode: 'overlay',
+            zIndex: 0,
+            pointerEvents: 'none',
+        },
+    },
+    beam: {
+        position: 'absolute',
+        top: '-10%',
+        left: '50%',
+        width: 'min(70vw, 720px)',
+        height: '55vh',
+        transform: 'translateX(-50%)',
+        background: 'linear-gradient(180deg, rgba(245, 240, 232, 0.07) 0%, rgba(245, 240, 232, 0.02) 40%, transparent 100%)',
+        clipPath: 'polygon(38% 0, 62% 0, 100% 100%, 0 100%)',
+        zIndex: 0,
+        pointerEvents: 'none',
+        animation: '$beamPulse 8s ease-in-out infinite',
+    },
+    '@keyframes beamPulse': {
+        '0%, 100%': { opacity: 0.55 },
+        '50%': { opacity: 1 },
+    },
+    '@keyframes fadeRise': {
+        from: {
+            opacity: 0,
+            transform: 'translateY(18px)',
+        },
+        to: {
+            opacity: 1,
+            transform: 'translateY(0)',
+        },
+    },
+    '@keyframes brandIn': {
+        from: {
+            opacity: 0,
+            letterSpacing: '0.35em',
+            transform: 'translateY(12px)',
+        },
+        to: {
+            opacity: 1,
+            letterSpacing: '0.06em',
+            transform: 'translateY(0)',
+        },
     },
     main: {
-        marginTop: theme.spacing(8),
-        marginBottom: theme.spacing(2),
-    },
-    footer: {
-        padding: theme.spacing(3, 2),
-        marginTop: 'auto',
-        backgroundColor: theme.palette.type === 'light' ? theme.palette.grey[200] : theme.palette.grey[800],
-    },
-    card: {
-        display: 'flex',
-        minHeight: '60vh'
-    },
-    cardDetails: {
+        position: 'relative',
+        zIndex: 1,
         flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        paddingTop: muiTheme.spacing(6),
+        paddingBottom: muiTheme.spacing(6),
+        animation: '$fadeRise 0.7s ease-out',
     },
-    cardMedia: {
-        width: 300,
+    brand: {
+        fontFamily: '"Bebas Neue", Impact, sans-serif',
+        fontSize: 'clamp(4.5rem, 14vw, 7.5rem)',
+        lineHeight: 0.9,
+        color: '#E50914',
+        margin: 0,
+        animation: '$brandIn 0.9s ease-out',
     },
-    netflixButton: {
-        background: '#E50914'
+    tagline: {
+        marginTop: muiTheme.spacing(1.5),
+        maxWidth: 420,
+        color: muiTheme.palette.text.secondary,
+        fontSize: '1.05rem',
+        lineHeight: 1.5,
+        animation: '$fadeRise 0.8s ease-out 0.1s both',
     },
-    imdbButton: {
-        background: '#C3A00D'
+    filtersPanel: {
+        marginTop: muiTheme.spacing(5),
+        animation: '$fadeRise 0.85s ease-out 0.15s both',
     },
-    divider: {
-        marginTop: '25px',
-        marginBottom: '25px',
+    filterLabel: {
+        display: 'block',
+        marginBottom: muiTheme.spacing(1.25),
+        fontSize: '0.72rem',
+        fontWeight: 600,
+        letterSpacing: '0.14em',
+        textTransform: 'uppercase',
+        color: muiTheme.palette.secondary.main,
     },
     formControl: {
-        margin: theme.spacing(1),
-        minWidth: 350,
-        maxWidth: 700,
+        width: '100%',
+        marginBottom: muiTheme.spacing(3.5),
+    },
+    yearsRow: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        marginBottom: muiTheme.spacing(0.5),
+    },
+    yearValue: {
+        fontSize: '0.9rem',
+        color: muiTheme.palette.text.primary,
+        fontVariantNumeric: 'tabular-nums',
+    },
+    chipRow: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        margin: muiTheme.spacing(-0.5),
+    },
+    streamChip: {
+        margin: muiTheme.spacing(0.5),
+        borderRadius: 4,
+        border: '1px solid rgba(154, 146, 136, 0.35)',
+        backgroundColor: 'transparent',
+        color: muiTheme.palette.text.secondary,
+        fontWeight: 500,
+        transition: 'background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.15s ease',
+        '&:hover': {
+            backgroundColor: 'rgba(245, 240, 232, 0.06)',
+            borderColor: 'rgba(212, 165, 116, 0.55)',
+        },
+        '&:active': {
+            transform: 'scale(0.97)',
+        },
+    },
+    streamChipSelected: {
+        color: '#F5F0E8',
+        borderColor: 'currentColor',
+        backgroundColor: 'rgba(245, 240, 232, 0.08)',
+    },
+    actions: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        gap: muiTheme.spacing(2),
+        marginTop: muiTheme.spacing(1),
+        animation: '$fadeRise 0.9s ease-out 0.2s both',
+    },
+    suggestButton: {
+        minWidth: 200,
+        padding: muiTheme.spacing(1.4, 3.5),
+        fontSize: '1rem',
+        fontWeight: 700,
+        borderRadius: 4,
+        backgroundColor: '#E50914',
+        color: '#F5F0E8',
+        boxShadow: 'none',
+        transition: 'background-color 0.2s ease, transform 0.15s ease',
+        '&:hover': {
+            backgroundColor: '#C40812',
+            boxShadow: 'none',
+        },
+        '&:active': {
+            transform: 'translateY(1px)',
+        },
+        '&:disabled': {
+            backgroundColor: 'rgba(229, 9, 20, 0.35)',
+            color: 'rgba(245, 240, 232, 0.55)',
+        },
+    },
+    hint: {
+        color: muiTheme.palette.text.secondary,
+        fontSize: '0.85rem',
+    },
+    errorText: {
+        marginTop: muiTheme.spacing(2),
+        color: '#E50914',
+        fontSize: '0.9rem',
+    },
+    resultSection: {
+        position: 'relative',
+        zIndex: 1,
+        marginTop: muiTheme.spacing(2),
+        marginBottom: muiTheme.spacing(6),
+        animation: '$fadeRise 0.55s ease-out',
+    },
+    resultShell: {
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        borderTop: '1px solid rgba(154, 146, 136, 0.22)',
+        borderBottom: '1px solid rgba(154, 146, 136, 0.22)',
+        background: 'linear-gradient(90deg, rgba(26, 24, 22, 0.92) 0%, rgba(14, 13, 12, 0.75) 100%)',
+        [muiTheme.breakpoints.up('md')]: {
+            flexDirection: 'row',
+            minHeight: 480,
+        },
+    },
+    poster: {
+        width: '100%',
+        minHeight: 360,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center top',
+        backgroundColor: '#1A1816',
+        [muiTheme.breakpoints.up('md')]: {
+            width: '38%',
+            minHeight: 'auto',
+            flexShrink: 0,
+        },
+    },
+    resultBody: {
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        padding: muiTheme.spacing(4, 3),
+        [muiTheme.breakpoints.up('md')]: {
+            padding: muiTheme.spacing(5, 5),
+        },
+    },
+    resultTitle: {
+        fontFamily: '"Bebas Neue", Impact, sans-serif',
+        fontSize: 'clamp(2rem, 5vw, 3.25rem)',
+        lineHeight: 1,
+        marginBottom: muiTheme.spacing(1),
+        color: '#F5F0E8',
+    },
+    meta: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: muiTheme.spacing(1, 2.5),
+        marginBottom: muiTheme.spacing(2),
+        color: muiTheme.palette.text.secondary,
+        fontSize: '0.92rem',
+    },
+    metaAccent: {
+        color: muiTheme.palette.secondary.main,
+        fontWeight: 600,
+    },
+    overview: {
+        maxWidth: 560,
+        color: muiTheme.palette.text.primary,
+        opacity: 0.88,
+        lineHeight: 1.65,
+        marginBottom: muiTheme.spacing(3),
+    },
+    providersLabel: {
+        marginBottom: muiTheme.spacing(1),
+        fontSize: '0.72rem',
+        fontWeight: 600,
+        letterSpacing: '0.14em',
+        textTransform: 'uppercase',
+        color: muiTheme.palette.secondary.main,
+    },
+    providerList: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: muiTheme.spacing(1),
+        marginBottom: muiTheme.spacing(3),
+    },
+    providerPill: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        padding: muiTheme.spacing(0.6, 1.25),
+        borderRadius: 4,
+        border: '1px solid rgba(154, 146, 136, 0.35)',
+        fontSize: '0.82rem',
+        color: '#F5F0E8',
+        textDecoration: 'none',
+        transition: 'border-color 0.2s ease, background-color 0.2s ease',
+        '&:hover': {
+            borderColor: '#D4A574',
+            backgroundColor: 'rgba(212, 165, 116, 0.08)',
+        },
+    },
+    resultActions: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: muiTheme.spacing(1.5),
+    },
+    imdbButton: {
+        backgroundColor: '#C3A00D',
+        color: '#0E0D0C',
+        fontWeight: 700,
+        borderRadius: 4,
+        boxShadow: 'none',
+        '&:hover': {
+            backgroundColor: '#A8880B',
+            boxShadow: 'none',
+        },
+    },
+    homeButton: {
+        borderColor: 'rgba(154, 146, 136, 0.45)',
+        color: '#F5F0E8',
+        borderRadius: 4,
+        '&:hover': {
+            borderColor: '#D4A574',
+            backgroundColor: 'rgba(212, 165, 116, 0.08)',
+        },
+    },
+    footer: {
+        position: 'relative',
+        zIndex: 1,
+        padding: muiTheme.spacing(3, 2),
+        marginTop: 'auto',
+        borderTop: '1px solid rgba(154, 146, 136, 0.15)',
+        backgroundColor: 'rgba(9, 8, 7, 0.65)',
+    },
+    footerText: {
+        color: muiTheme.palette.text.secondary,
+        fontSize: '0.85rem',
+        textAlign: 'center',
+        '& a': {
+            color: muiTheme.palette.secondary.main,
+            textDecoration: 'none',
+            borderBottom: '1px solid transparent',
+            transition: 'border-color 0.2s ease',
+            '&:hover': {
+                borderBottomColor: muiTheme.palette.secondary.main,
+            },
+        },
+    },
+    loadingWrap: {
+        display: 'flex',
+        justifyContent: 'center',
+        padding: muiTheme.spacing(6, 0),
     },
 }));
 
 function Title() {
+    const classes = useStyles();
+
     return (
-        <Box color="#E50914" m="auto">
-            <Typography variant="h2" component="h1" gutterBottom>
+        <Box>
+            <Typography className={classes.brand} component="h1">
                 Flixx
             </Typography>
-        </Box>        
+            <Typography className={classes.tagline}>
+                Escolha gênero, ano e streaming — a gente sorteia o filme da sessão.
+            </Typography>
+        </Box>
     );
 }
 
 function Filters(props) {
     const classes = useStyles();
 
-    const ITEM_HEIGHT = 48;
-    const ITEM_PADDING_TOP = 8;
     const MenuProps = {
         PaperProps: {
             style: {
-                maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-                width: 250,
+                maxHeight: 48 * 4.5 + 8,
+                width: 280,
+                backgroundColor: '#1A1816',
             },
         },
+        getContentAnchorEl: null,
     };
 
-    selectGenre = props.selectGenre;
-    setYears = props.setYears;
-
     const handleGenreChange = (event) => {
-        selectGenre(event.target.value);
+        props.selectGenre(event.target.value);
     };
 
     const handleYearsChange = (event, newValue) => {
-        setYears(newValue);
-      };
-
-    const getStyles = (name, genres, theme) => {
-        return {
-            fontWeight:
-                genres.indexOf(name) === -1
-                ? theme.typography.fontWeightRegular
-                : theme.typography.fontWeightMedium,
-        };
+        props.setYears(newValue);
     };
 
-    const genres = [
-          {
-            "id": 28,
-            "name": "Ação"
-          },
-          {
-            "id": 12,
-            "name": "Aventura"
-          },
-          {
-            "id": 16,
-            "name": "Animação"
-          },
-          {
-            "id": 35,
-            "name": "Comédia"
-          },
-          {
-            "id": 80,
-            "name": "Crime"
-          },
-          {
-            "id": 99,
-            "name": "Documentário"
-          },
-          {
-            "id": 18,
-            "name": "Drama"
-          },
-          {
-            "id": 10751,
-            "name": "Família"
-          },
-          {
-            "id": 14,
-            "name": "Fantasia"
-          },
-          {
-            "id": 36,
-            "name": "História"
-          },
-          {
-            "id": 27,
-            "name": "Terror"
-          },
-          {
-            "id": 10402,
-            "name": "Música"
-          },
-          {
-            "id": 9648,
-            "name": "Mistério"
-          },
-          {
-            "id": 10749,
-            "name": "Romance"
-          },
-          {
-            "id": 878,
-            "name": "Ficção científica"
-          },
-          {
-            "id": 10770,
-            "name": "Cinema TV"
-          },
-          {
-            "id": 53,
-            "name": "Thriller"
-          },
-          {
-            "id": 10752,
-            "name": "Guerra"
-          },
-          {
-            "id": 37,
-            "name": "Faroeste"
-          }
-        ];
+    const toggleProvider = (providerId) => {
+        const current = props.selectedProviders;
+        if (current.includes(providerId)) {
+            props.setProviders(current.filter((id) => id !== providerId));
+        } else {
+            props.setProviders(current.concat(providerId));
+        }
+    };
+
+    const selectedGenreNames = GENRES
+        .filter((genre) => props.selectedGenres.includes(genre.id))
+        .map((genre) => genre.name)
+        .join(', ');
 
     return (
-        <div>
+        <div className={classes.filtersPanel}>
             <FormControl className={classes.formControl}>
-                <Typography id="gender-label" gutterBottom>Gêneros</Typography>
+                <Typography className={classes.filterLabel} id="genre-label">
+                    Gêneros
+                </Typography>
                 <Select
-                    id="gender"
+                    id="genre"
                     multiple
+                    displayEmpty
                     value={props.selectedGenres}
                     onChange={handleGenreChange}
                     input={<Input />}
                     MenuProps={MenuProps}
+                    renderValue={(selected) => {
+                        if (!selected.length) {
+                            return <span style={{ color: '#9A9288' }}>Qualquer gênero</span>;
+                        }
+                        return selectedGenreNames;
+                    }}
                 >
-                    {genres.map((genre) => (
-                        <MenuItem key={genre.id} value={genre.id} style={getStyles(genre.name, props.selectedGenres, theme)}>
+                    {GENRES.map((genre) => (
+                        <MenuItem
+                            key={genre.id}
+                            value={genre.id}
+                            style={{
+                                fontWeight: props.selectedGenres.includes(genre.id) ? 600 : 400,
+                            }}
+                        >
                             {genre.name}
                         </MenuItem>
                     ))}
                 </Select>
             </FormControl>
+
             <FormControl className={classes.formControl}>
-                <Typography id="years-label" gutterBottom>Entre os anos</Typography>
+                <Typography className={classes.filterLabel} id="years-label">
+                    Período
+                </Typography>
+                <div className={classes.yearsRow}>
+                    <span className={classes.yearValue}>{props.years[0]}</span>
+                    <span className={classes.yearValue}>{props.years[1]}</span>
+                </div>
                 <Slider
                     value={props.years}
                     onChange={handleYearsChange}
                     valueLabelDisplay="auto"
-                    aria-labelledby="range-slider"
+                    aria-labelledby="years-label"
                     min={1900}
                     step={1}
-                    max={2020}
+                    max={CURRENT_YEAR}
                 />
+            </FormControl>
+
+            <FormControl className={classes.formControl}>
+                <Typography className={classes.filterLabel} id="streaming-label">
+                    Onde assistir
+                </Typography>
+                <div className={classes.chipRow} role="group" aria-labelledby="streaming-label">
+                    {STREAMING_PROVIDERS.map((provider) => {
+                        const selected = props.selectedProviders.includes(provider.id);
+                        return (
+                            <Chip
+                                key={provider.id}
+                                label={provider.name}
+                                clickable
+                                onClick={() => toggleProvider(provider.id)}
+                                className={
+                                    classes.streamChip +
+                                    (selected ? ' ' + classes.streamChipSelected : '')
+                                }
+                                style={selected ? { color: provider.color, borderColor: provider.color } : undefined}
+                            />
+                        );
+                    })}
+                </div>
             </FormControl>
         </div>
     );
 }
 
 function SuggestionButton(props) {
+    const classes = useStyles();
+
     return (
-        <Button variant="contained" color="primary" onClick={ props.getSuggestion } >Sugerir um filme!</Button>
+        <div className={classes.actions}>
+            <Button
+                className={classes.suggestButton}
+                variant="contained"
+                onClick={props.getSuggestion}
+                disabled={props.loading}
+            >
+                {props.loading ? 'Procurando…' : 'Sugerir um filme'}
+            </Button>
+            {!props.hasResult && !props.loading && (
+                <Typography className={classes.hint}>
+                    Sem filtro de streaming = qualquer plataforma
+                </Typography>
+            )}
+        </div>
     );
 }
 
 function SuggestionResult(props) {
     const classes = useStyles();
-    
-    if (props.movie.title !== '') {
+    const movie = props.movie;
+
+    if (props.loading) {
         return (
-            <Grid item xs={12}>
-                <Card className={classes.card}>
-                    <Hidden xsDown>
-                        <CardMedia className={classes.cardMedia} image={ props.movie.poster } title="imageTitle" />
-                    </Hidden>
-                    <div className={classes.cardDetails}>
-                        <CardContent>
-                            <Typography component="h2" variant="h5">
-                                { props.movie.title }
-                            </Typography>
-                            <Typography variant="subtitle1" color="textSecondary">
-                                Nome Original: { props.movie.original_title }
-                            </Typography>
-                            <Typography variant="subtitle1" color="textSecondary">
-                                Lançamento: { props.movie.release_year }
-                            </Typography>
-                            <Typography variant="subtitle1" color="textSecondary">
-                                Nota média: { props.movie.vote_average }
-                            </Typography>
-                            <Typography variant="subtitle1" color="textSecondary">
-                                Gêneros: { props.movie.genres }
-                            </Typography>
-                            <Typography variant="subtitle1" paragraph>
-                                { props.movie.overview }
-                            </Typography>
-
-                            { props.movie.netflix_button ? 
-                                <Button variant="contained" className={classes.netflixButton} href={ props.movie.homepage } target="_blank" >Ver na Netflix</Button>
-                                : <span></span>
-                            } 
-
-                            { props.movie.imdb_id ? 
-                                <Button variant="contained" className={classes.imdbButton} href={ "https://www.imdb.com/title/" + props.movie.imdb_id } target="_blank" >Página do IMDb</Button>
-                                : <span></span>
-                            }                                
-                        </CardContent>
-                    </div>                    
-                </Card>
-            </Grid>
+            <div className={classes.loadingWrap}>
+                <CircularProgress color="primary" />
+            </div>
         );
-    } else {
-        return (<Grid item xs={12}></Grid>);
     }
+
+    if (!movie || !movie.title) {
+        return null;
+    }
+
+    return (
+        <section className={classes.resultSection} aria-live="polite">
+            <div className={classes.resultShell}>
+                <div
+                    className={classes.poster}
+                    style={{ backgroundImage: 'url(' + movie.poster + ')' }}
+                    role="img"
+                    aria-label={'Poster de ' + movie.title}
+                />
+                <div className={classes.resultBody}>
+                    <Typography className={classes.resultTitle} component="h2">
+                        {movie.title}
+                    </Typography>
+
+                    <div className={classes.meta}>
+                        <span>{movie.release_year}</span>
+                        <span>
+                            Nota <span className={classes.metaAccent}>{movie.vote_average}</span>
+                        </span>
+                        {movie.genres ? <span>{movie.genres}</span> : null}
+                    </div>
+
+                    {movie.original_title && movie.original_title !== movie.title ? (
+                        <Typography variant="body2" color="textSecondary" paragraph>
+                            Nome original: {movie.original_title}
+                        </Typography>
+                    ) : null}
+
+                    <Typography className={classes.overview}>
+                        {movie.overview || 'Sinopse indisponível para este título.'}
+                    </Typography>
+
+                    {movie.watch_providers && movie.watch_providers.length > 0 ? (
+                        <div>
+                            <Typography className={classes.providersLabel}>
+                                Disponível em
+                            </Typography>
+                            <div className={classes.providerList}>
+                                {movie.watch_providers.map((provider) => (
+                                    <a
+                                        key={provider.provider_id}
+                                        className={classes.providerPill}
+                                        href={movie.watch_link || undefined}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{ borderLeft: '3px solid ' + (provider.color || '#D4A574') }}
+                                    >
+                                        {provider.provider_name}
+                                    </a>
+                                ))}
+                            </div>
+                        </div>
+                    ) : null}
+
+                    <div className={classes.resultActions}>
+                        {movie.imdb_id ? (
+                            <Button
+                                className={classes.imdbButton}
+                                variant="contained"
+                                href={'https://www.imdb.com/title/' + movie.imdb_id}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Ver no IMDb
+                            </Button>
+                        ) : null}
+                        {movie.homepage ? (
+                            <Button
+                                className={classes.homeButton}
+                                variant="outlined"
+                                href={movie.homepage}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Site oficial
+                            </Button>
+                        ) : null}
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
 }
 
 function Footer() {
+    const classes = useStyles();
+
     return (
         <Container maxWidth="sm">
-            <Typography variant="body1">Made with ❤ by <a href="#" target="_blank" title="Valdir Pereira">Valdir Pereira</a> using ⚛ and <a href="https://www.themoviedb.org/" target="_blank" title="The Movie Database">The Movie Database</a>. © 2020</Typography>
+            <Typography className={classes.footerText}>
+                Feito por{' '}
+                <a href="https://github.com/ValdirNp" target="_blank" rel="noopener noreferrer" title="Valdir Pereira">
+                    Valdir Pereira
+                </a>{' '}
+                com React e dados de{' '}
+                <a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer" title="The Movie Database">
+                    The Movie Database
+                </a>
+                . Este produto usa a API do TMDB, mas não é endossado nem certificado pelo TMDB.
+            </Typography>
         </Container>
     );
 }
 
 function getRandomNumber(bottom, top) {
-    return Math.floor( Math.random() * ( 1 + top - bottom ) ) + bottom;
+    return Math.floor(Math.random() * (1 + top - bottom)) + bottom;
+}
+
+function getProviderMeta(providerId) {
+    return STREAMING_PROVIDERS.find((item) => item.id === providerId);
+}
+
+function normalizeWatchProviders(providersPayload) {
+    if (!providersPayload || !providersPayload.results || !providersPayload.results[WATCH_REGION]) {
+        return { providers: [], link: null };
+    }
+
+    const region = providersPayload.results[WATCH_REGION];
+    const flatrate = region.flatrate || [];
+    const knownIds = STREAMING_PROVIDERS.map((item) => item.id);
+
+    const providers = flatrate
+        .filter((item) => knownIds.includes(item.provider_id))
+        .map((item) => {
+            const meta = getProviderMeta(item.provider_id);
+            return {
+                provider_id: item.provider_id,
+                provider_name: item.provider_name,
+                color: meta ? meta.color : '#D4A574',
+            };
+        });
+
+    return {
+        providers: providers,
+        link: region.link || null,
+    };
 }
 
 function App() {
     const classes = useStyles();
-    const [suggestedMovie, updateSuggestedMovie] = React.useState({ title: '' });
+    const [suggestedMovie, updateSuggestedMovie] = React.useState(null);
     const [selectedGenres, selectGenre] = React.useState([]);
-    const [years, setYears] = React.useState([1900, 2020]);
-    
+    const [years, setYears] = React.useState([1990, CURRENT_YEAR]);
+    const [selectedProviders, setProviders] = React.useState([]);
+    const [loading, setLoading] = React.useState(false);
+    const [error, setError] = React.useState('');
+
     const discoverUrl = 'https://api.themoviedb.org/3/discover/movie';
     const movieDetailsUrl = 'https://api.themoviedb.org/3/movie';
 
-    const getMovieDetails = function(id) {
-        let params = {
+    const getMovieDetails = function (id) {
+        const params = {
             api_key: API_KEY,
-            language: 'pt-BR'
+            language: 'pt-BR',
+            append_to_response: 'watch/providers',
         };
 
-        let url = movieDetailsUrl + '/' + id + '?' + new URLSearchParams(params).toString();
+        const url = movieDetailsUrl + '/' + id + '?' + new URLSearchParams(params).toString();
 
-        fetch(url)
-            .then(res => res.json())
-            .then(
-                (result) => {
-                    let newSuggestedMovie = result;
-
-                    newSuggestedMovie.release_year = newSuggestedMovie.release_date.split('-', 1);
-                    newSuggestedMovie.genres = newSuggestedMovie.genres.map(function(elem) {
-                        return elem.name;
-                    }).join(', ');
-
-                    newSuggestedMovie.poster = 'https://placehold.it/300x700&text=Sem%20imagem';
-                    if (newSuggestedMovie.poster_path) {
-                        newSuggestedMovie.poster = "https://image.tmdb.org/t/p/w300/" + newSuggestedMovie.poster_path
-                    }
-
-                    if (newSuggestedMovie.homepage && newSuggestedMovie.homepage.includes("https://www.netflix.com/title")) {
-                        newSuggestedMovie.netflix_button = true;
-                    }
-
-                    updateSuggestedMovie(newSuggestedMovie);
-                },
-                (error) => {
-                    console.log(error)
+        return fetch(url)
+            .then((res) => res.json())
+            .then((result) => {
+                if (result.status_code) {
+                    throw new Error(result.status_message || 'Não foi possível carregar o filme.');
                 }
-            )
-    }
 
-    const getSuggestion = function() {
+                const watchInfo = normalizeWatchProviders(result['watch/providers']);
+
+                const newSuggestedMovie = Object.assign({}, result, {
+                    release_year: result.release_date
+                        ? result.release_date.split('-', 1)[0]
+                        : '—',
+                    genres: (result.genres || []).map((elem) => elem.name).join(', '),
+                    poster: result.poster_path
+                        ? 'https://image.tmdb.org/t/p/w500/' + result.poster_path
+                        : 'https://placehold.co/500x750/1A1816/9A9288?text=Sem+imagem',
+                    watch_providers: watchInfo.providers,
+                    watch_link: watchInfo.link,
+                });
+
+                updateSuggestedMovie(newSuggestedMovie);
+                setLoading(false);
+            });
+    };
+
+    const getSuggestion = function () {
+        setLoading(true);
+        setError('');
+
         let minYear = 1900;
-        let maxYear = 2020;
+        let maxYear = CURRENT_YEAR;
 
         if (years.length === 2) {
             minYear = years[0];
             maxYear = years[1];
         }
 
-        let page = getRandomNumber(1, 5);
-        let year = getRandomNumber(minYear, maxYear);
-
-        let sortOptions = [
-            'popularity.asc',
-            'popularity.desc',
-            'release_date.asc',
-            'release_date.desc',
-            'revenue.asc',
-            'revenue.desc',
-            'primary_release_date.asc',
-            'primary_release_date.desc',
-            'original_title.asc',
-            'original_title.desc',
-            'vote_average.asc',
-            'vote_average.desc',
-            'vote_count.asc',
-            'vote_count.desc',
-        ];
-
-        let params = {
-            'api_key': API_KEY,
-            'language': 'pt-BR',
-            'sort_by': sortOptions[Math.floor(Math.random() * sortOptions.length)],
-            'include_adult': false,
-            'include_video': false,
-            'page': 1,
-            'primary_release_year': year,
+        const params = {
+            api_key: API_KEY,
+            language: 'pt-BR',
+            sort_by: SORT_OPTIONS[Math.floor(Math.random() * SORT_OPTIONS.length)],
+            include_adult: false,
+            include_video: false,
+            page: 1,
+            'primary_release_date.gte': minYear + '-01-01',
+            'primary_release_date.lte': maxYear + '-12-31',
+            'vote_count.gte': 20,
         };
 
         if (selectedGenres.length > 0) {
             params.with_genres = selectedGenres.join(',');
         }
 
-        let url = discoverUrl + '?' + new URLSearchParams(params).toString();
+        if (selectedProviders.length > 0) {
+            params.with_watch_providers = selectedProviders.join('|');
+            params.watch_region = WATCH_REGION;
+            params.with_watch_monetization_types = 'flatrate';
+        }
 
-        fetch(url)
-            .then(res => res.json())
-            .then(
-                (result) => {
-                    let listOfMovies = result.results;
-                    let itemSelected = listOfMovies[Math.floor(Math.random() * listOfMovies.length)];
-                    let movieId = itemSelected.id;
+        const firstUrl = discoverUrl + '?' + new URLSearchParams(params).toString();
 
-                    getMovieDetails(movieId);
-                },
-                (error) => {
-                    console.log(error)
+        fetch(firstUrl)
+            .then((res) => res.json())
+            .then((firstPage) => {
+                if (!firstPage.results || firstPage.results.length === 0) {
+                    throw new Error('Nenhum filme encontrado com esses filtros. Tente ampliar o período ou mudar o streaming.');
                 }
-            )
-    }
+
+                const totalPages = Math.min(firstPage.total_pages || 1, 20);
+                const page = getRandomNumber(1, totalPages);
+                params.page = page;
+
+                const pageUrl = discoverUrl + '?' + new URLSearchParams(params).toString();
+                return fetch(pageUrl).then((res) => res.json());
+            })
+            .then((result) => {
+                const listOfMovies = result.results || [];
+                if (listOfMovies.length === 0) {
+                    throw new Error('Nenhum filme encontrado com esses filtros. Tente ampliar o período ou mudar o streaming.');
+                }
+
+                const itemSelected = listOfMovies[Math.floor(Math.random() * listOfMovies.length)];
+                return getMovieDetails(itemSelected.id);
+            })
+            .catch((err) => {
+                console.log(err);
+                setLoading(false);
+                updateSuggestedMovie(null);
+                setError(err.message || 'Algo deu errado ao buscar a sugestão.');
+            });
+    };
 
     return (
-        <div className={ classes.root }>
-            <CssBaseline />
-            <Container component="main" className={ classes.main } maxWidth="md" >
-                <Title />
-                <Filters selectedGenres={selectedGenres} selectGenre={selectGenre} years={years} setYears={setYears} />
-                <SuggestionButton getSuggestion={ getSuggestion } />
-                <Divider className={classes.divider} />
-                <SuggestionResult movie={ suggestedMovie } />
-            </Container>
-            <footer className={ classes.footer }>
-                <Footer />
-            </footer>
-        </div>
+        <ThemeProvider theme={theme}>
+            <div className={classes.root}>
+                <CssBaseline />
+                <div className={classes.beam} aria-hidden="true" />
+                <Container component="main" className={classes.main} maxWidth="md">
+                    <Title />
+                    <Filters
+                        selectedGenres={selectedGenres}
+                        selectGenre={selectGenre}
+                        years={years}
+                        setYears={setYears}
+                        selectedProviders={selectedProviders}
+                        setProviders={setProviders}
+                    />
+                    <SuggestionButton
+                        getSuggestion={getSuggestion}
+                        loading={loading}
+                        hasResult={Boolean(suggestedMovie && suggestedMovie.title)}
+                    />
+                    {error ? (
+                        <Typography className={classes.errorText} role="alert">
+                            {error}
+                        </Typography>
+                    ) : null}
+                </Container>
+                <Container maxWidth="lg">
+                    <SuggestionResult movie={suggestedMovie} loading={loading} />
+                </Container>
+                <footer className={classes.footer}>
+                    <Footer />
+                </footer>
+            </div>
+        </ThemeProvider>
     );
 }
-    
+
 ReactDOM.render(
     <App />,
     document.getElementById('app')
