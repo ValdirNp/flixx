@@ -390,11 +390,36 @@ const useStyles = makeStyles((muiTheme) => ({
         borderColor: 'currentColor',
         backgroundColor: 'rgba(245, 240, 232, 0.08)',
     },
+    typeChip: {
+        margin: muiTheme.spacing(0.5),
+        borderRadius: 4,
+        border: '1px solid rgba(245, 240, 232, 0.4)',
+        backgroundColor: 'rgba(245, 240, 232, 0.08)',
+        color: '#F5F0E8',
+        fontWeight: 600,
+        transition: 'background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.15s ease',
+        '& .MuiChip-label': {
+            color: 'inherit',
+            paddingLeft: 14,
+            paddingRight: 14,
+        },
+        '&:hover': {
+            backgroundColor: 'rgba(245, 240, 232, 0.14)',
+            borderColor: 'rgba(245, 240, 232, 0.65)',
+        },
+        '&:active': {
+            transform: 'scale(0.97)',
+        },
+    },
     typeChipSelected: {
         color: '#F5F0E8',
-        borderColor: '#E50914',
-        backgroundColor: 'rgba(229, 9, 20, 0.18)',
-        fontWeight: 600,
+        borderColor: '#C40812',
+        backgroundColor: '#E50914',
+        fontWeight: 700,
+        '&:hover': {
+            backgroundColor: '#C40812',
+            borderColor: '#C40812',
+        },
     },
     actions: {
         display: 'flex',
@@ -676,7 +701,7 @@ function Filters(props) {
                                 clickable
                                 onClick={() => setMediaType(mediaType.id)}
                                 className={
-                                    classes.streamChip +
+                                    classes.typeChip +
                                     (selected ? ' ' + classes.typeChipSelected : '')
                                 }
                             />
