@@ -390,6 +390,12 @@ const useStyles = makeStyles((muiTheme) => ({
         borderColor: 'currentColor',
         backgroundColor: 'rgba(245, 240, 232, 0.08)',
     },
+    typeChipSelected: {
+        color: '#F5F0E8',
+        borderColor: '#E50914',
+        backgroundColor: 'rgba(229, 9, 20, 0.18)',
+        fontWeight: 600,
+    },
     actions: {
         display: 'flex',
         flexWrap: 'wrap',
@@ -671,9 +677,8 @@ function Filters(props) {
                                 onClick={() => setMediaType(mediaType.id)}
                                 className={
                                     classes.streamChip +
-                                    (selected ? ' ' + classes.streamChipSelected : '')
+                                    (selected ? ' ' + classes.typeChipSelected : '')
                                 }
-                                style={selected ? { color: '#E50914', borderColor: '#E50914' } : undefined}
                             />
                         );
                     })}
