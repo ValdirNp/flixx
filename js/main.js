@@ -20,7 +20,13 @@ const {
 const CURRENT_YEAR = new Date().getFullYear();
 const WATCH_REGION = 'BR';
 
-const GENRES = [
+const MEDIA_TYPES = [
+    { id: '', name: 'Filme ou série' },
+    { id: 'movie', name: 'Filme' },
+    { id: 'tv', name: 'Série' },
+];
+
+const MOVIE_GENRES = [
     { id: 28, name: 'Ação' },
     { id: 12, name: 'Aventura' },
     { id: 16, name: 'Animação' },
@@ -42,6 +48,25 @@ const GENRES = [
     { id: 37, name: 'Faroeste' },
 ];
 
+const TV_GENRES = [
+    { id: 10759, name: 'Ação e aventura' },
+    { id: 16, name: 'Animação' },
+    { id: 35, name: 'Comédia' },
+    { id: 80, name: 'Crime' },
+    { id: 99, name: 'Documentário' },
+    { id: 18, name: 'Drama' },
+    { id: 10751, name: 'Família' },
+    { id: 10762, name: 'Kids' },
+    { id: 9648, name: 'Mistério' },
+    { id: 10763, name: 'News' },
+    { id: 10764, name: 'Reality' },
+    { id: 10765, name: 'Sci-Fi e Fantasy' },
+    { id: 10766, name: 'Soap' },
+    { id: 10767, name: 'Talk' },
+    { id: 10768, name: 'Guerra e política' },
+    { id: 37, name: 'Faroeste' },
+];
+
 const STREAMING_PROVIDERS = [
     { id: 8, name: 'Netflix', color: '#E50914' },
     { id: 119, name: 'Prime Video', color: '#00A8E1' },
@@ -52,7 +77,7 @@ const STREAMING_PROVIDERS = [
     { id: 531, name: 'Paramount+', color: '#0064FF' },
 ];
 
-const SORT_OPTIONS = [
+const MOVIE_SORT_OPTIONS = [
     'popularity.desc',
     'popularity.asc',
     'release_date.desc',
@@ -63,6 +88,33 @@ const SORT_OPTIONS = [
     'primary_release_date.desc',
     'primary_release_date.asc',
 ];
+
+const TV_SORT_OPTIONS = [
+    'popularity.desc',
+    'popularity.asc',
+    'first_air_date.desc',
+    'first_air_date.asc',
+    'vote_average.desc',
+    'vote_average.asc',
+    'vote_count.desc',
+];
+
+function getGenresForMediaType(mediaType) {
+    if (mediaType === 'tv') {
+        return TV_GENRES;
+    }
+    if (mediaType === 'movie') {
+        return MOVIE_GENRES;
+    }
+    return MOVIE_GENRES.concat(
+        TV_GENRES.filter((genre) => !MOVIE_GENRES.some((movieGenre) => movieGenre.id === genre.id))
+    );
+}
+
+function filterGenresForMediaType(selectedGenres, mediaType) {
+    const allowedIds = (mediaType === 'tv' ? TV_GENRES : MOVIE_GENRES).map((genre) => genre.id);
+    return selectedGenres.filter((id) => allowedIds.includes(id));
+}
 
 const theme = createMuiTheme({
     typography: {
@@ -437,6 +489,23 @@ const useStyles = makeStyles((muiTheme) => ({
         color: muiTheme.palette.secondary.main,
         fontWeight: 600,
     },
+    ratingStars: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 2,
+        letterSpacing: '0.06em',
+        color: muiTheme.palette.secondary.main,
+        lineHeight: 1,
+    },
+    ratingStarEmpty: {
+        color: 'rgba(154, 146, 136, 0.45)',
+    },
+    ratingValue: {
+        marginLeft: muiTheme.spacing(0.75),
+        color: muiTheme.palette.text.secondary,
+        fontSize: '0.85rem',
+        fontVariantNumeric: 'tabular-nums',
+    },
     overview: {
         maxWidth: 560,
         color: muiTheme.palette.text.primary,
@@ -536,7 +605,7 @@ function Title() {
                 Flixx
             </Typography>
             <Typography className={classes.tagline}>
-                Escolha gênero, ano e streaming — a gente sorteia o filme da sessão.
+                Escolha filme ou série, gênero, ano e streaming — a gente sorteia o que assistir.
             </Typography>
         </Box>
     );
@@ -544,6 +613,7 @@ function Title() {
 
 function Filters(props) {
     const classes = useStyles();
+    const genres = getGenresForMediaType(props.mediaType);
 
     const MenuProps = {
         PaperProps: {
@@ -564,6 +634,12 @@ function Filters(props) {
         props.setYears(newValue);
     };
 
+    const setMediaType = (mediaTypeId) => {
+        props.setMediaType(mediaTypeId);
+        const allowedIds = getGenresForMediaType(mediaTypeId).map((genre) => genre.id);
+        props.selectGenre(props.selectedGenres.filter((id) => allowedIds.includes(id)));
+    };
+
     const toggleProvider = (providerId) => {
         const current = props.selectedProviders;
         if (current.includes(providerId)) {
@@ -573,13 +649,37 @@ function Filters(props) {
         }
     };
 
-    const selectedGenreNames = GENRES
+    const selectedGenreNames = genres
         .filter((genre) => props.selectedGenres.includes(genre.id))
         .map((genre) => genre.name)
         .join(', ');
 
     return (
         <div className={classes.filtersPanel}>
+            <FormControl className={classes.formControl}>
+                <Typography className={classes.filterLabel} id="media-type-label">
+                    Tipo
+                </Typography>
+                <div className={classes.chipRow} role="group" aria-labelledby="media-type-label">
+                    {MEDIA_TYPES.map((mediaType) => {
+                        const selected = props.mediaType === mediaType.id;
+                        return (
+                            <Chip
+                                key={mediaType.id || 'any'}
+                                label={mediaType.name}
+                                clickable
+                                onClick={() => setMediaType(mediaType.id)}
+                                className={
+                                    classes.streamChip +
+                                    (selected ? ' ' + classes.streamChipSelected : '')
+                                }
+                                style={selected ? { color: '#E50914', borderColor: '#E50914' } : undefined}
+                            />
+                        );
+                    })}
+                </div>
+            </FormControl>
+
             <FormControl className={classes.formControl}>
                 <Typography className={classes.filterLabel} id="genre-label">
                     Gêneros
@@ -599,7 +699,7 @@ function Filters(props) {
                         return selectedGenreNames;
                     }}
                 >
-                    {GENRES.map((genre) => (
+                    {genres.map((genre) => (
                         <MenuItem
                             key={genre.id}
                             value={genre.id}
@@ -662,6 +762,13 @@ function Filters(props) {
 function SuggestionButton(props) {
     const classes = useStyles();
 
+    let buttonLabel = 'Sugerir algo';
+    if (props.mediaType === 'movie') {
+        buttonLabel = 'Sugerir um filme';
+    } else if (props.mediaType === 'tv') {
+        buttonLabel = 'Sugerir uma série';
+    }
+
     return (
         <div className={classes.actions}>
             <Button
@@ -670,7 +777,7 @@ function SuggestionButton(props) {
                 onClick={props.getSuggestion}
                 disabled={props.loading}
             >
-                {props.loading ? 'Procurando…' : 'Sugerir um filme'}
+                {props.loading ? 'Procurando…' : buttonLabel}
             </Button>
             {!props.hasResult && !props.loading && (
                 <Typography className={classes.hint}>
@@ -679,6 +786,42 @@ function SuggestionButton(props) {
             )}
         </div>
     );
+}
+
+function RatingStars(props) {
+    const classes = useStyles();
+    const average = Number(props.average);
+    const voteCount = Number(props.voteCount) || 0;
+
+    if (!voteCount || !Number.isFinite(average) || average <= 0) {
+        return null;
+    }
+
+    const scoreOutOfFive = Math.max(0, Math.min(5, average / 2));
+    const filledCount = Math.round(scoreOutOfFive);
+    const label = average.toFixed(1).replace('.', ',') + ' de 10';
+
+    return (
+        <span className={classes.ratingStars} role="img" aria-label={'Nota ' + label}>
+            {[0, 1, 2, 3, 4].map((index) => (
+                <span
+                    key={index}
+                    className={index < filledCount ? undefined : classes.ratingStarEmpty}
+                    aria-hidden="true"
+                >
+                    ★
+                </span>
+            ))}
+            <span className={classes.ratingValue}>{label}</span>
+        </span>
+    );
+}
+
+function formatSeasonsLabel(count) {
+    if (!count) {
+        return null;
+    }
+    return count === 1 ? '1 temporada' : count + ' temporadas';
 }
 
 function SuggestionResult(props) {
@@ -697,6 +840,8 @@ function SuggestionResult(props) {
         return null;
     }
 
+    const seasonsLabel = movie.media_type === 'tv' ? formatSeasonsLabel(movie.number_of_seasons) : null;
+
     return (
         <section className={classes.resultSection} aria-live="polite">
             <div className={classes.resultShell}>
@@ -712,10 +857,10 @@ function SuggestionResult(props) {
                     </Typography>
 
                     <div className={classes.meta}>
+                        <span>{movie.media_label}</span>
                         <span>{movie.release_year}</span>
-                        <span>
-                            Nota <span className={classes.metaAccent}>{movie.vote_average}</span>
-                        </span>
+                        {seasonsLabel ? <span>{seasonsLabel}</span> : null}
+                        <RatingStars average={movie.vote_average} voteCount={movie.vote_count} />
                         {movie.genres ? <span>{movie.genres}</span> : null}
                     </div>
 
@@ -838,42 +983,51 @@ function normalizeWatchProviders(providersPayload) {
 function App() {
     const classes = useStyles();
     const [suggestedMovie, updateSuggestedMovie] = React.useState(null);
+    const [mediaType, setMediaType] = React.useState('');
     const [selectedGenres, selectGenre] = React.useState([]);
     const [years, setYears] = React.useState([1990, CURRENT_YEAR]);
     const [selectedProviders, setProviders] = React.useState([]);
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = React.useState('');
 
-    const discoverUrl = '/api/tmdb/discover/movie';
-    const movieDetailsUrl = '/api/tmdb/movie';
-
-    const getMovieDetails = function (id) {
+    const getTitleDetails = function (type, id) {
         const params = {
             language: 'pt-BR',
-            append_to_response: 'watch/providers',
+            append_to_response: type === 'tv' ? 'watch/providers,external_ids' : 'watch/providers',
         };
 
-        const url = movieDetailsUrl + '/' + id + '?' + new URLSearchParams(params).toString();
+        const detailsUrl = '/api/tmdb/' + type + '/' + id + '?' + new URLSearchParams(params).toString();
 
-        return fetch(url)
+        return fetch(detailsUrl)
             .then((res) => res.json())
             .then((result) => {
                 if (result.status_code) {
-                    throw new Error(result.status_message || 'Não foi possível carregar o filme.');
+                    throw new Error(result.status_message || 'Não foi possível carregar o título.');
                 }
 
                 const watchInfo = normalizeWatchProviders(result['watch/providers']);
+                const isTv = type === 'tv';
+                const title = isTv ? result.name : result.title;
+                const originalTitle = isTv ? result.original_name : result.original_title;
+                const dateField = isTv ? result.first_air_date : result.release_date;
+                const imdbId = isTv
+                    ? (result.external_ids && result.external_ids.imdb_id) || null
+                    : result.imdb_id || null;
 
                 const newSuggestedMovie = Object.assign({}, result, {
-                    release_year: result.release_date
-                        ? result.release_date.split('-', 1)[0]
-                        : '—',
+                    title: title,
+                    original_title: originalTitle,
+                    media_type: type,
+                    media_label: isTv ? 'Série' : 'Filme',
+                    release_year: dateField ? dateField.split('-', 1)[0] : '—',
+                    number_of_seasons: isTv ? result.number_of_seasons || null : null,
                     genres: (result.genres || []).map((elem) => elem.name).join(', '),
                     poster: result.poster_path
                         ? 'https://image.tmdb.org/t/p/w500/' + result.poster_path
                         : 'https://placehold.co/500x750/1A1816/9A9288?text=Sem+imagem',
                     watch_providers: watchInfo.providers,
                     watch_link: watchInfo.link,
+                    imdb_id: imdbId,
                 });
 
                 updateSuggestedMovie(newSuggestedMovie);
@@ -885,6 +1039,15 @@ function App() {
         setLoading(true);
         setError('');
 
+        const type = mediaType || (Math.random() < 0.5 ? 'movie' : 'tv');
+        const isTv = type === 'tv';
+        const discoverUrl = '/api/tmdb/discover/' + type;
+        const sortOptions = isTv ? TV_SORT_OPTIONS : MOVIE_SORT_OPTIONS;
+        const genresForQuery = filterGenresForMediaType(selectedGenres, type);
+        const emptyMessage = isTv
+            ? 'Nenhuma série encontrada com esses filtros. Tente ampliar o período ou mudar o streaming.'
+            : 'Nenhum filme encontrado com esses filtros. Tente ampliar o período ou mudar o streaming.';
+
         let minYear = 1900;
         let maxYear = CURRENT_YEAR;
 
@@ -895,17 +1058,23 @@ function App() {
 
         const params = {
             language: 'pt-BR',
-            sort_by: SORT_OPTIONS[Math.floor(Math.random() * SORT_OPTIONS.length)],
+            sort_by: sortOptions[Math.floor(Math.random() * sortOptions.length)],
             include_adult: false,
-            include_video: false,
             page: 1,
-            'primary_release_date.gte': minYear + '-01-01',
-            'primary_release_date.lte': maxYear + '-12-31',
             'vote_count.gte': 20,
         };
 
-        if (selectedGenres.length > 0) {
-            params.with_genres = selectedGenres.join(',');
+        if (!isTv) {
+            params.include_video = false;
+            params['primary_release_date.gte'] = minYear + '-01-01';
+            params['primary_release_date.lte'] = maxYear + '-12-31';
+        } else {
+            params['first_air_date.gte'] = minYear + '-01-01';
+            params['first_air_date.lte'] = maxYear + '-12-31';
+        }
+
+        if (genresForQuery.length > 0) {
+            params.with_genres = genresForQuery.join(',');
         }
 
         if (selectedProviders.length > 0) {
@@ -920,7 +1089,7 @@ function App() {
             .then((res) => res.json())
             .then((firstPage) => {
                 if (!firstPage.results || firstPage.results.length === 0) {
-                    throw new Error('Nenhum filme encontrado com esses filtros. Tente ampliar o período ou mudar o streaming.');
+                    throw new Error(emptyMessage);
                 }
 
                 const totalPages = Math.min(firstPage.total_pages || 1, 20);
@@ -931,13 +1100,13 @@ function App() {
                 return fetch(pageUrl).then((res) => res.json());
             })
             .then((result) => {
-                const listOfMovies = result.results || [];
-                if (listOfMovies.length === 0) {
-                    throw new Error('Nenhum filme encontrado com esses filtros. Tente ampliar o período ou mudar o streaming.');
+                const listOfTitles = result.results || [];
+                if (listOfTitles.length === 0) {
+                    throw new Error(emptyMessage);
                 }
 
-                const itemSelected = listOfMovies[Math.floor(Math.random() * listOfMovies.length)];
-                return getMovieDetails(itemSelected.id);
+                const itemSelected = listOfTitles[Math.floor(Math.random() * listOfTitles.length)];
+                return getTitleDetails(type, itemSelected.id);
             })
             .catch((err) => {
                 console.log(err);
@@ -955,6 +1124,8 @@ function App() {
                 <Container component="main" className={classes.main} maxWidth="md">
                     <Title />
                     <Filters
+                        mediaType={mediaType}
+                        setMediaType={setMediaType}
                         selectedGenres={selectedGenres}
                         selectGenre={selectGenre}
                         years={years}
@@ -965,6 +1136,7 @@ function App() {
                     <SuggestionButton
                         getSuggestion={getSuggestion}
                         loading={loading}
+                        mediaType={mediaType}
                         hasResult={Boolean(suggestedMovie && suggestedMovie.title)}
                     />
                     {error ? (

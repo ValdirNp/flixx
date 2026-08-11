@@ -2,7 +2,10 @@ const TMDB_BASE = 'https://api.themoviedb.org/3';
 
 /** Only these TMDB routes are allowed through the proxy. */
 function isAllowedPath(path) {
-    return /^discover\/movie$/.test(path) || /^movie\/\d+$/.test(path);
+    return (
+        /^discover\/(movie|tv)$/.test(path) ||
+        /^(movie|tv)\/\d+$/.test(path)
+    );
 }
 
 function extractTmdbPath(eventPath) {
