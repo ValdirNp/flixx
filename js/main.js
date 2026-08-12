@@ -71,11 +71,147 @@ const STREAMING_PROVIDERS = [
     { id: 8, name: 'Netflix', color: '#E50914' },
     { id: 119, name: 'Prime Video', color: '#00A8E1' },
     { id: 337, name: 'Disney+', color: '#113CCF' },
-    { id: 384, name: 'Max', color: '#002BE7' },
+    { id: 384, name: 'HBO Max', color: '#002BE7' },
     { id: 350, name: 'Apple TV+', color: '#555555' },
     { id: 307, name: 'Globoplay', color: '#FB0234' },
     { id: 531, name: 'Paramount+', color: '#0064FF' },
 ];
+
+const ORIGINAL_LANGUAGES = [
+    { id: 'pt', name: 'Português' },
+    { id: 'en', name: 'Inglês' },
+    { id: 'es', name: 'Espanhol' },
+    { id: 'fr', name: 'Francês' },
+    { id: 'de', name: 'Alemão' },
+    { id: 'it', name: 'Italiano' },
+    { id: 'ja', name: 'Japonês' },
+    { id: 'ko', name: 'Coreano' },
+    { id: 'zh', name: 'Chinês' },
+    { id: 'hi', name: 'Hindi' },
+    { id: 'ar', name: 'Árabe' },
+    { id: 'ru', name: 'Russo' },
+    { id: 'tr', name: 'Turco' },
+    { id: 'th', name: 'Tailandês' },
+    { id: 'sv', name: 'Sueco' },
+    { id: 'da', name: 'Dinamarquês' },
+    { id: 'no', name: 'Norueguês' },
+    { id: 'fi', name: 'Finlandês' },
+    { id: 'nl', name: 'Holandês' },
+    { id: 'pl', name: 'Polonês' },
+    { id: 'cs', name: 'Tcheco' },
+    { id: 'hu', name: 'Húngaro' },
+    { id: 'ro', name: 'Romeno' },
+    { id: 'uk', name: 'Ucraniano' },
+    { id: 'el', name: 'Grego' },
+    { id: 'he', name: 'Hebraico' },
+    { id: 'fa', name: 'Persa' },
+    { id: 'id', name: 'Indonésio' },
+    { id: 'vi', name: 'Vietnamita' },
+    { id: 'tl', name: 'Filipino' },
+];
+
+const ORIGIN_COUNTRIES = [
+    { id: 'BR', name: 'Brasil' },
+    { id: 'US', name: 'Estados Unidos' },
+    { id: 'GB', name: 'Reino Unido' },
+    { id: 'CA', name: 'Canadá' },
+    { id: 'AU', name: 'Austrália' },
+    { id: 'MX', name: 'México' },
+    { id: 'AR', name: 'Argentina' },
+    { id: 'CL', name: 'Chile' },
+    { id: 'CO', name: 'Colômbia' },
+    { id: 'PT', name: 'Portugal' },
+    { id: 'ES', name: 'Espanha' },
+    { id: 'FR', name: 'França' },
+    { id: 'DE', name: 'Alemanha' },
+    { id: 'IT', name: 'Itália' },
+    { id: 'BE', name: 'Bélgica' },
+    { id: 'NL', name: 'Países Baixos' },
+    { id: 'SE', name: 'Suécia' },
+    { id: 'NO', name: 'Noruega' },
+    { id: 'DK', name: 'Dinamarca' },
+    { id: 'FI', name: 'Finlândia' },
+    { id: 'IE', name: 'Irlanda' },
+    { id: 'CH', name: 'Suíça' },
+    { id: 'AT', name: 'Áustria' },
+    { id: 'PL', name: 'Polônia' },
+    { id: 'CZ', name: 'Tchequia' },
+    { id: 'HU', name: 'Hungria' },
+    { id: 'RO', name: 'Romênia' },
+    { id: 'UA', name: 'Ucrânia' },
+    { id: 'RU', name: 'Rússia' },
+    { id: 'TR', name: 'Turquia' },
+    { id: 'GR', name: 'Grécia' },
+    { id: 'IL', name: 'Israel' },
+    { id: 'EG', name: 'Egito' },
+    { id: 'ZA', name: 'África do Sul' },
+    { id: 'IN', name: 'Índia' },
+    { id: 'JP', name: 'Japão' },
+    { id: 'KR', name: 'Coreia do Sul' },
+    { id: 'CN', name: 'China' },
+    { id: 'HK', name: 'Hong Kong' },
+    { id: 'TW', name: 'Taiwan' },
+    { id: 'TH', name: 'Tailândia' },
+    { id: 'ID', name: 'Indonésia' },
+    { id: 'PH', name: 'Filipinas' },
+    { id: 'VN', name: 'Vietnã' },
+    { id: 'NZ', name: 'Nova Zelândia' },
+];
+
+function getLanguageName(code) {
+    const match = ORIGINAL_LANGUAGES.find((item) => item.id === code);
+    return match ? match.name : code;
+}
+
+function getCountryName(code) {
+    const match = ORIGIN_COUNTRIES.find((item) => item.id === code);
+    return match ? match.name : code;
+}
+
+function getOriginCountryCodes(result) {
+    if (result.origin_country && result.origin_country.length) {
+        return result.origin_country;
+    }
+
+    return (result.production_countries || []).map((country) => country.iso_3166_1);
+}
+
+function formatOriginCountryLabel(codes, preferredCode) {
+    if (!codes || !codes.length) {
+        return null;
+    }
+
+    const uniqueCodes = codes.filter((code, index) => codes.indexOf(code) === index);
+    const orderedCodes = preferredCode && uniqueCodes.includes(preferredCode)
+        ? [preferredCode].concat(uniqueCodes.filter((code) => code !== preferredCode))
+        : uniqueCodes;
+
+    return orderedCodes.map(getCountryName).join(', ');
+}
+
+function titleMatchesOriginCountry(item, countryCode, isTv) {
+    if (!countryCode) {
+        return true;
+    }
+
+    if (isTv) {
+        return (item.origin_country || []).includes(countryCode);
+    }
+
+    return true;
+}
+
+function pickRandomTitle(titles, countryCode, isTv) {
+    const candidates = countryCode
+        ? titles.filter((item) => titleMatchesOriginCountry(item, countryCode, isTv))
+        : titles;
+
+    if (!candidates.length) {
+        return null;
+    }
+
+    return candidates[Math.floor(Math.random() * candidates.length)];
+}
 
 const MOVIE_SORT_OPTIONS = [
     'popularity.desc',
@@ -481,13 +617,17 @@ const useStyles = makeStyles((muiTheme) => ({
     },
     poster: {
         width: '100%',
-        minHeight: 360,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center top',
+        aspectRatio: '2 / 3',
+        maxHeight: 520,
+        backgroundSize: 'contain',
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'center center',
         backgroundColor: '#1A1816',
         [muiTheme.breakpoints.up('md')]: {
             width: '38%',
-            minHeight: 'auto',
+            maxWidth: 360,
+            maxHeight: 'none',
+            alignSelf: 'center',
             flexShrink: 0,
         },
     },
@@ -636,7 +776,7 @@ function Title() {
                 Flixx
             </Typography>
             <Typography className={classes.tagline}>
-                Escolha filme ou série, gênero, ano e streaming — a gente sorteia o que assistir.
+                Escolha filme ou série, gênero, idioma, país, ano e streaming — a gente sorteia o que assistir.
             </Typography>
         </Box>
     );
@@ -663,6 +803,14 @@ function Filters(props) {
 
     const handleYearsChange = (event, newValue) => {
         props.setYears(newValue);
+    };
+
+    const handleLanguageChange = (event) => {
+        props.setOriginalLanguage(event.target.value);
+    };
+
+    const handleCountryChange = (event) => {
+        props.setOriginCountry(event.target.value);
     };
 
     const setMediaType = (mediaTypeId) => {
@@ -763,6 +911,64 @@ function Filters(props) {
             </FormControl>
 
             <FormControl className={classes.formControl}>
+                <Typography className={classes.filterLabel} id="language-label">
+                    Idioma original
+                </Typography>
+                <Select
+                    id="original-language"
+                    displayEmpty
+                    value={props.originalLanguage}
+                    onChange={handleLanguageChange}
+                    input={<Input />}
+                    MenuProps={MenuProps}
+                    renderValue={(selected) => {
+                        if (!selected) {
+                            return <span style={{ color: '#9A9288' }}>Qualquer idioma</span>;
+                        }
+                        return getLanguageName(selected);
+                    }}
+                >
+                    <MenuItem value="">
+                        Qualquer idioma
+                    </MenuItem>
+                    {ORIGINAL_LANGUAGES.map((language) => (
+                        <MenuItem key={language.id} value={language.id}>
+                            {language.name}
+                        </MenuItem>
+                    ))}
+                </Select>
+            </FormControl>
+
+            <FormControl className={classes.formControl}>
+                <Typography className={classes.filterLabel} id="country-label">
+                    País de origem
+                </Typography>
+                <Select
+                    id="origin-country"
+                    displayEmpty
+                    value={props.originCountry}
+                    onChange={handleCountryChange}
+                    input={<Input />}
+                    MenuProps={MenuProps}
+                    renderValue={(selected) => {
+                        if (!selected) {
+                            return <span style={{ color: '#9A9288' }}>Qualquer país</span>;
+                        }
+                        return getCountryName(selected);
+                    }}
+                >
+                    <MenuItem value="">
+                        Qualquer país
+                    </MenuItem>
+                    {ORIGIN_COUNTRIES.map((country) => (
+                        <MenuItem key={country.id} value={country.id}>
+                            {country.name}
+                        </MenuItem>
+                    ))}
+                </Select>
+            </FormControl>
+
+            <FormControl className={classes.formControl}>
                 <Typography className={classes.filterLabel} id="streaming-label">
                     Onde assistir
                 </Typography>
@@ -857,10 +1063,23 @@ function formatSeasonsLabel(count) {
 function SuggestionResult(props) {
     const classes = useStyles();
     const movie = props.movie;
+    const resultRef = React.useRef(null);
+    const loadingRef = React.useRef(null);
+
+    React.useEffect(() => {
+        if (props.loading && loadingRef.current) {
+            loadingRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            return;
+        }
+
+        if (!props.loading && movie && movie.title && resultRef.current) {
+            resultRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, [props.loading, movie]);
 
     if (props.loading) {
         return (
-            <div className={classes.loadingWrap}>
+            <div className={classes.loadingWrap} ref={loadingRef}>
                 <CircularProgress color="primary" />
             </div>
         );
@@ -873,7 +1092,7 @@ function SuggestionResult(props) {
     const seasonsLabel = movie.media_type === 'tv' ? formatSeasonsLabel(movie.number_of_seasons) : null;
 
     return (
-        <section className={classes.resultSection} aria-live="polite">
+        <section className={classes.resultSection} ref={resultRef} aria-live="polite">
             <div className={classes.resultShell}>
                 <div
                     className={classes.poster}
@@ -892,6 +1111,8 @@ function SuggestionResult(props) {
                         {seasonsLabel ? <span>{seasonsLabel}</span> : null}
                         <RatingStars average={movie.vote_average} voteCount={movie.vote_count} />
                         {movie.genres ? <span>{movie.genres}</span> : null}
+                        {movie.original_language_label ? <span>{movie.original_language_label}</span> : null}
+                        {movie.origin_country_label ? <span>{movie.origin_country_label}</span> : null}
                     </div>
 
                     {movie.original_title && movie.original_title !== movie.title ? (
@@ -999,7 +1220,7 @@ function normalizeWatchProviders(providersPayload) {
             const meta = getProviderMeta(item.provider_id);
             return {
                 provider_id: item.provider_id,
-                provider_name: item.provider_name,
+                provider_name: meta ? meta.name : item.provider_name,
                 color: meta ? meta.color : '#D4A574',
             };
         });
@@ -1016,11 +1237,13 @@ function App() {
     const [mediaType, setMediaType] = React.useState('');
     const [selectedGenres, selectGenre] = React.useState([]);
     const [years, setYears] = React.useState([1990, CURRENT_YEAR]);
+    const [originalLanguage, setOriginalLanguage] = React.useState('');
+    const [originCountry, setOriginCountry] = React.useState('');
     const [selectedProviders, setProviders] = React.useState([]);
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = React.useState('');
 
-    const getTitleDetails = function (type, id) {
+    const getTitleDetails = function (type, id, requestedOriginCountry) {
         const params = {
             language: 'pt-BR',
             append_to_response: type === 'tv' ? 'watch/providers,external_ids' : 'watch/providers',
@@ -1043,6 +1266,13 @@ function App() {
                 const imdbId = isTv
                     ? (result.external_ids && result.external_ids.imdb_id) || null
                     : result.imdb_id || null;
+                const originCountryCodes = getOriginCountryCodes(result);
+
+                if (requestedOriginCountry && !originCountryCodes.includes(requestedOriginCountry)) {
+                    const mismatchError = new Error('COUNTRY_MISMATCH');
+                    mismatchError.code = 'COUNTRY_MISMATCH';
+                    throw mismatchError;
+                }
 
                 const newSuggestedMovie = Object.assign({}, result, {
                     title: title,
@@ -1052,6 +1282,13 @@ function App() {
                     release_year: dateField ? dateField.split('-', 1)[0] : '—',
                     number_of_seasons: isTv ? result.number_of_seasons || null : null,
                     genres: (result.genres || []).map((elem) => elem.name).join(', '),
+                    original_language_label: result.original_language
+                        ? getLanguageName(result.original_language)
+                        : null,
+                    origin_country_label: formatOriginCountryLabel(
+                        originCountryCodes,
+                        requestedOriginCountry
+                    ),
                     poster: result.poster_path
                         ? 'https://image.tmdb.org/t/p/w500/' + result.poster_path
                         : 'https://placehold.co/500x750/1A1816/9A9288?text=Sem+imagem',
@@ -1065,6 +1302,36 @@ function App() {
             });
     };
 
+    const trySuggestionFromPage = function (type, listOfTitles, requestedOriginCountry, isTv, attemptIndex) {
+        const itemSelected = pickRandomTitle(listOfTitles, requestedOriginCountry, isTv);
+
+        if (!itemSelected) {
+            return Promise.reject(new Error(emptyMessageForType(isTv)));
+        }
+
+        const remainingTitles = listOfTitles.filter((item) => item.id !== itemSelected.id);
+
+        return getTitleDetails(type, itemSelected.id, requestedOriginCountry).catch((err) => {
+            if (err.code === 'COUNTRY_MISMATCH' && attemptIndex < 4 && remainingTitles.length > 0) {
+                return trySuggestionFromPage(
+                    type,
+                    remainingTitles,
+                    requestedOriginCountry,
+                    isTv,
+                    attemptIndex + 1
+                );
+            }
+
+            throw err;
+        });
+    };
+
+    const emptyMessageForType = function (isTv) {
+        return isTv
+            ? 'Nenhuma série encontrada com esses filtros. Tente ampliar o período ou mudar idioma, país ou streaming.'
+            : 'Nenhum filme encontrado com esses filtros. Tente ampliar o período ou mudar idioma, país ou streaming.';
+    };
+
     const getSuggestion = function () {
         setLoading(true);
         setError('');
@@ -1074,9 +1341,7 @@ function App() {
         const discoverUrl = '/api/tmdb/discover/' + type;
         const sortOptions = isTv ? TV_SORT_OPTIONS : MOVIE_SORT_OPTIONS;
         const genresForQuery = filterGenresForMediaType(selectedGenres, type);
-        const emptyMessage = isTv
-            ? 'Nenhuma série encontrada com esses filtros. Tente ampliar o período ou mudar o streaming.'
-            : 'Nenhum filme encontrado com esses filtros. Tente ampliar o período ou mudar o streaming.';
+        const emptyMessage = emptyMessageForType(isTv);
 
         let minYear = 1900;
         let maxYear = CURRENT_YEAR;
@@ -1107,6 +1372,14 @@ function App() {
             params.with_genres = genresForQuery.join(',');
         }
 
+        if (originalLanguage) {
+            params.with_original_language = originalLanguage;
+        }
+
+        if (originCountry) {
+            params.with_origin_country = originCountry;
+        }
+
         if (selectedProviders.length > 0) {
             params.with_watch_providers = selectedProviders.join('|');
             params.watch_region = WATCH_REGION;
@@ -1135,8 +1408,7 @@ function App() {
                     throw new Error(emptyMessage);
                 }
 
-                const itemSelected = listOfTitles[Math.floor(Math.random() * listOfTitles.length)];
-                return getTitleDetails(type, itemSelected.id);
+                return trySuggestionFromPage(type, listOfTitles, originCountry, isTv, 0);
             })
             .catch((err) => {
                 console.log(err);
@@ -1160,6 +1432,10 @@ function App() {
                         selectGenre={selectGenre}
                         years={years}
                         setYears={setYears}
+                        originalLanguage={originalLanguage}
+                        setOriginalLanguage={setOriginalLanguage}
+                        originCountry={originCountry}
+                        setOriginCountry={setOriginCountry}
                         selectedProviders={selectedProviders}
                         setProviders={setProviders}
                     />
