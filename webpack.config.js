@@ -1,10 +1,20 @@
 const path = require('path');
+const fs = require('fs');
+
+const entries = {
+    dist: "./js/main.js",
+};
+
+// Internal /card route: separate bundle so the main page never loads it.
+if (fs.existsSync(path.resolve(__dirname, "js/card/index.js"))) {
+    entries.card = "./js/card/index.js";
+}
 
 module.exports = {
-    entry: "./js/main.js",
+    entry: entries,
     output: {
         path: path.resolve(__dirname, "js"),
-        filename: "dist.js",
+        filename: "[name].js",
     },
     module: {
         rules: [
