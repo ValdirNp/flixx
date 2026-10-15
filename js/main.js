@@ -158,6 +158,50 @@ const ORIGIN_COUNTRIES = [
     { id: 'NZ', name: 'Nova Zelândia' },
 ];
 
+const MIN_RATINGS = [
+    { id: '', name: 'Qualquer nota' },
+    { id: '6', name: '6,0+' },
+    { id: '6.5', name: '6,5+' },
+    { id: '7', name: '7,0+' },
+    { id: '7.5', name: '7,5+' },
+    { id: '8', name: '8,0+' },
+];
+
+const RUNTIME_PRESETS = [
+    { id: '', name: 'Qualquer duração', min: null, max: null },
+    { id: 'short', name: 'Até 90 min', min: null, max: 90 },
+    { id: 'medium', name: '90–120 min', min: 90, max: 120 },
+    { id: 'long', name: '120–150 min', min: 120, max: 150 },
+    { id: 'epic', name: 'Mais de 150 min', min: 150, max: null },
+];
+
+const MOOD_KEYWORDS = [
+    { id: 9672, name: 'Baseado em fatos reais' },
+    { id: 818, name: 'Baseado em livro' },
+    { id: 9717, name: 'Baseado em HQ' },
+    { id: 210024, name: 'Anime' },
+    { id: 9715, name: 'Super-herói' },
+    { id: 4379, name: 'Viagem no tempo' },
+    { id: 4565, name: 'Distopia' },
+    { id: 9882, name: 'Espaço' },
+    { id: 9951, name: 'Aliens' },
+    { id: 12377, name: 'Zumbi' },
+    { id: 3133, name: 'Vampiro' },
+    { id: 100, name: 'Assalto / heist' },
+    { id: 158718, name: 'Espionagem' },
+    { id: 10683, name: 'Amadurecimento' },
+    { id: 14544, name: 'Direção feminina' },
+    { id: 222243, name: 'Natal' },
+    { id: 4344, name: 'Musical' },
+];
+
+const TV_STATUSES = [
+    { id: '', name: 'Qualquer status' },
+    { id: '0', name: 'Em exibição' },
+    { id: '3', name: 'Encerrada' },
+    { id: '4', name: 'Cancelada' },
+];
+
 function getLanguageName(code) {
     const match = ORIGINAL_LANGUAGES.find((item) => item.id === code);
     return match ? match.name : code;
@@ -166,6 +210,20 @@ function getLanguageName(code) {
 function getCountryName(code) {
     const match = ORIGIN_COUNTRIES.find((item) => item.id === code);
     return match ? match.name : code;
+}
+
+function getMinRatingLabel(value) {
+    const match = MIN_RATINGS.find((item) => item.id === value);
+    return match ? match.name : value;
+}
+
+function getRuntimePreset(value) {
+    return RUNTIME_PRESETS.find((item) => item.id === value) || RUNTIME_PRESETS[0];
+}
+
+function getTvStatusLabel(value) {
+    const match = TV_STATUSES.find((item) => item.id === value);
+    return match ? match.name : value;
 }
 
 function getOriginCountryCodes(result) {
@@ -250,6 +308,14 @@ function getGenresForMediaType(mediaType) {
 function filterGenresForMediaType(selectedGenres, mediaType) {
     const allowedIds = (mediaType === 'tv' ? TV_GENRES : MOVIE_GENRES).map((genre) => genre.id);
     return selectedGenres.filter((id) => allowedIds.includes(id));
+}
+
+function getGenreNamesByIds(genreIds, mediaType) {
+    const genres = getGenresForMediaType(mediaType);
+    return genres
+        .filter((genre) => genreIds.includes(genre.id))
+        .map((genre) => genre.name)
+        .join(', ');
 }
 
 const theme = createMuiTheme({
@@ -776,7 +842,7 @@ function Title() {
                 Flixx
             </Typography>
             <Typography className={classes.tagline}>
-                Escolha filme ou série, gênero, idioma, país, ano e streaming — a gente sorteia o que assistir.
+                Escolha tipo, gênero, clima, nota e streaming — a gente sorteia o que assistir.
             </Typography>
         </Box>
     );
@@ -785,6 +851,8 @@ function Title() {
 function Filters(props) {
     const classes = useStyles();
     const genres = getGenresForMediaType(props.mediaType);
+    const showRuntime = props.mediaType !== 'tv';
+    const showTvStatus = props.mediaType !== 'movie';
 
     const MenuProps = {
         PaperProps: {
@@ -798,7 +866,15 @@ function Filters(props) {
     };
 
     const handleGenreChange = (event) => {
-        props.selectGenre(event.target.value);
+        const nextGenres = event.target.value;
+        props.selectGenre(nextGenres);
+        props.setExcludedGenres(props.excludedGenres.filter((id) => !nextGenres.includes(id)));
+    };
+
+    const handleExcludedGenreChange = (event) => {
+        const nextExcluded = event.target.value;
+        props.setExcludedGenres(nextExcluded);
+        props.selectGenre(props.selectedGenres.filter((id) => !nextExcluded.includes(id)));
     };
 
     const handleYearsChange = (event, newValue) => {
@@ -813,10 +889,35 @@ function Filters(props) {
         props.setOriginCountry(event.target.value);
     };
 
+    const handleMinRatingChange = (event) => {
+        props.setMinRating(event.target.value);
+    };
+
+    const handleRuntimeChange = (event) => {
+        props.setRuntimePreset(event.target.value);
+    };
+
+    const handleMoodChange = (event) => {
+        props.setMoodKeywords(event.target.value);
+    };
+
+    const handleTvStatusChange = (event) => {
+        props.setTvStatus(event.target.value);
+    };
+
     const setMediaType = (mediaTypeId) => {
         props.setMediaType(mediaTypeId);
         const allowedIds = getGenresForMediaType(mediaTypeId).map((genre) => genre.id);
         props.selectGenre(props.selectedGenres.filter((id) => allowedIds.includes(id)));
+        props.setExcludedGenres(props.excludedGenres.filter((id) => allowedIds.includes(id)));
+
+        if (mediaTypeId === 'tv') {
+            props.setRuntimePreset('');
+        }
+
+        if (mediaTypeId === 'movie') {
+            props.setTvStatus('');
+        }
     };
 
     const toggleProvider = (providerId) => {
@@ -828,9 +929,11 @@ function Filters(props) {
         }
     };
 
-    const selectedGenreNames = genres
-        .filter((genre) => props.selectedGenres.includes(genre.id))
-        .map((genre) => genre.name)
+    const selectedGenreNames = getGenreNamesByIds(props.selectedGenres, props.mediaType);
+    const excludedGenreNames = getGenreNamesByIds(props.excludedGenres, props.mediaType);
+    const selectedMoodNames = MOOD_KEYWORDS
+        .filter((keyword) => props.moodKeywords.includes(keyword.id))
+        .map((keyword) => keyword.name)
         .join(', ');
 
     return (
@@ -890,6 +993,155 @@ function Filters(props) {
                     ))}
                 </Select>
             </FormControl>
+
+            <FormControl className={classes.formControl}>
+                <Typography className={classes.filterLabel} id="exclude-genre-label">
+                    Excluir gêneros
+                </Typography>
+                <Select
+                    id="exclude-genre"
+                    multiple
+                    displayEmpty
+                    value={props.excludedGenres}
+                    onChange={handleExcludedGenreChange}
+                    input={<Input />}
+                    MenuProps={MenuProps}
+                    renderValue={(selected) => {
+                        if (!selected.length) {
+                            return <span style={{ color: '#9A9288' }}>Nenhum excluído</span>;
+                        }
+                        return excludedGenreNames;
+                    }}
+                >
+                    {genres.map((genre) => (
+                        <MenuItem
+                            key={'exclude-' + genre.id}
+                            value={genre.id}
+                            style={{
+                                fontWeight: props.excludedGenres.includes(genre.id) ? 600 : 400,
+                            }}
+                        >
+                            {genre.name}
+                        </MenuItem>
+                    ))}
+                </Select>
+            </FormControl>
+
+            <FormControl className={classes.formControl}>
+                <Typography className={classes.filterLabel} id="mood-label">
+                    Clima
+                </Typography>
+                <Select
+                    id="mood"
+                    multiple
+                    displayEmpty
+                    value={props.moodKeywords}
+                    onChange={handleMoodChange}
+                    input={<Input />}
+                    MenuProps={MenuProps}
+                    renderValue={(selected) => {
+                        if (!selected.length) {
+                            return <span style={{ color: '#9A9288' }}>Qualquer clima</span>;
+                        }
+                        return selectedMoodNames;
+                    }}
+                >
+                    {MOOD_KEYWORDS.map((keyword) => (
+                        <MenuItem
+                            key={keyword.id}
+                            value={keyword.id}
+                            style={{
+                                fontWeight: props.moodKeywords.includes(keyword.id) ? 600 : 400,
+                            }}
+                        >
+                            {keyword.name}
+                        </MenuItem>
+                    ))}
+                </Select>
+            </FormControl>
+
+            <FormControl className={classes.formControl}>
+                <Typography className={classes.filterLabel} id="min-rating-label">
+                    Nota mínima
+                </Typography>
+                <Select
+                    id="min-rating"
+                    displayEmpty
+                    value={props.minRating}
+                    onChange={handleMinRatingChange}
+                    input={<Input />}
+                    MenuProps={MenuProps}
+                    renderValue={(selected) => {
+                        if (!selected) {
+                            return <span style={{ color: '#9A9288' }}>Qualquer nota</span>;
+                        }
+                        return getMinRatingLabel(selected);
+                    }}
+                >
+                    {MIN_RATINGS.map((rating) => (
+                        <MenuItem key={rating.id || 'any-rating'} value={rating.id}>
+                            {rating.name}
+                        </MenuItem>
+                    ))}
+                </Select>
+            </FormControl>
+
+            {showRuntime ? (
+                <FormControl className={classes.formControl}>
+                    <Typography className={classes.filterLabel} id="runtime-label">
+                        Duração do filme
+                    </Typography>
+                    <Select
+                        id="runtime"
+                        displayEmpty
+                        value={props.runtimePreset}
+                        onChange={handleRuntimeChange}
+                        input={<Input />}
+                        MenuProps={MenuProps}
+                        renderValue={(selected) => {
+                            const preset = getRuntimePreset(selected);
+                            if (!selected) {
+                                return <span style={{ color: '#9A9288' }}>Qualquer duração</span>;
+                            }
+                            return preset.name;
+                        }}
+                    >
+                        {RUNTIME_PRESETS.map((preset) => (
+                            <MenuItem key={preset.id || 'any-runtime'} value={preset.id}>
+                                {preset.name}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+            ) : null}
+
+            {showTvStatus ? (
+                <FormControl className={classes.formControl}>
+                    <Typography className={classes.filterLabel} id="tv-status-label">
+                        Status da série
+                    </Typography>
+                    <Select
+                        id="tv-status"
+                        displayEmpty
+                        value={props.tvStatus}
+                        onChange={handleTvStatusChange}
+                        input={<Input />}
+                        MenuProps={MenuProps}
+                        renderValue={(selected) => {
+                            if (!selected) {
+                                return <span style={{ color: '#9A9288' }}>Qualquer status</span>;
+                            }
+                            return getTvStatusLabel(selected);
+                        }}
+                    >
+                        {TV_STATUSES.map((status) => (
+                            <MenuItem key={status.id || 'any-status'} value={status.id}>
+                                {status.name}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+            ) : null}
 
             <FormControl className={classes.formControl}>
                 <Typography className={classes.filterLabel} id="years-label">
@@ -1236,6 +1488,11 @@ function App() {
     const [suggestedMovie, updateSuggestedMovie] = React.useState(null);
     const [mediaType, setMediaType] = React.useState('');
     const [selectedGenres, selectGenre] = React.useState([]);
+    const [excludedGenres, setExcludedGenres] = React.useState([]);
+    const [moodKeywords, setMoodKeywords] = React.useState([]);
+    const [minRating, setMinRating] = React.useState('');
+    const [runtimePreset, setRuntimePreset] = React.useState('');
+    const [tvStatus, setTvStatus] = React.useState('');
     const [years, setYears] = React.useState([1990, CURRENT_YEAR]);
     const [originalLanguage, setOriginalLanguage] = React.useState('');
     const [originCountry, setOriginCountry] = React.useState('');
@@ -1328,8 +1585,8 @@ function App() {
 
     const emptyMessageForType = function (isTv) {
         return isTv
-            ? 'Nenhuma série encontrada com esses filtros. Tente ampliar o período ou mudar idioma, país ou streaming.'
-            : 'Nenhum filme encontrado com esses filtros. Tente ampliar o período ou mudar idioma, país ou streaming.';
+            ? 'Nenhuma série encontrada com esses filtros. Tente relaxar nota, clima, status ou streaming.'
+            : 'Nenhum filme encontrado com esses filtros. Tente relaxar nota, duração, clima ou streaming.';
     };
 
     const getSuggestion = function () {
@@ -1341,6 +1598,7 @@ function App() {
         const discoverUrl = '/api/tmdb/discover/' + type;
         const sortOptions = isTv ? TV_SORT_OPTIONS : MOVIE_SORT_OPTIONS;
         const genresForQuery = filterGenresForMediaType(selectedGenres, type);
+        const excludedForQuery = filterGenresForMediaType(excludedGenres, type);
         const emptyMessage = emptyMessageForType(isTv);
 
         let minYear = 1900;
@@ -1370,6 +1628,32 @@ function App() {
 
         if (genresForQuery.length > 0) {
             params.with_genres = genresForQuery.join(',');
+        }
+
+        if (excludedForQuery.length > 0) {
+            params.without_genres = excludedForQuery.join(',');
+        }
+
+        if (moodKeywords.length > 0) {
+            params.with_keywords = moodKeywords.join('|');
+        }
+
+        if (minRating) {
+            params['vote_average.gte'] = minRating;
+        }
+
+        if (!isTv && runtimePreset) {
+            const runtime = getRuntimePreset(runtimePreset);
+            if (runtime.min !== null) {
+                params['with_runtime.gte'] = runtime.min;
+            }
+            if (runtime.max !== null) {
+                params['with_runtime.lte'] = runtime.max;
+            }
+        }
+
+        if (isTv && tvStatus) {
+            params.with_status = tvStatus;
         }
 
         if (originalLanguage) {
@@ -1430,6 +1714,16 @@ function App() {
                         setMediaType={setMediaType}
                         selectedGenres={selectedGenres}
                         selectGenre={selectGenre}
+                        excludedGenres={excludedGenres}
+                        setExcludedGenres={setExcludedGenres}
+                        moodKeywords={moodKeywords}
+                        setMoodKeywords={setMoodKeywords}
+                        minRating={minRating}
+                        setMinRating={setMinRating}
+                        runtimePreset={runtimePreset}
+                        setRuntimePreset={setRuntimePreset}
+                        tvStatus={tvStatus}
+                        setTvStatus={setTvStatus}
                         years={years}
                         setYears={setYears}
                         originalLanguage={originalLanguage}
