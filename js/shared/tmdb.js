@@ -252,7 +252,8 @@ export function normalizeWatchProviders(providersPayload) {
 /**
  * Builds the /discover query from the page filters.
  * `random` lets callers inject a seeded PRNG (defaults to Math.random); `filters.sortBy`
- * pins the sort order and `filters.minVotes` overrides the minimum vote count.
+ * pins the sort order, `filters.minVotes` overrides the minimum vote count and
+ * `filters.onlyStreaming` keeps only titles on some subscription streaming in WATCH_REGION.
  */
 export function buildDiscoverParams(type, filters, random) {
     const rand = random || Math.random;
@@ -329,6 +330,9 @@ export function buildDiscoverParams(type, filters, random) {
 
     if (selectedProviders.length > 0) {
         params.with_watch_providers = selectedProviders.join('|');
+        params.watch_region = WATCH_REGION;
+        params.with_watch_monetization_types = 'flatrate';
+    } else if (filters.onlyStreaming) {
         params.watch_region = WATCH_REGION;
         params.with_watch_monetization_types = 'flatrate';
     }
