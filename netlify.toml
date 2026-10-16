@@ -14,3 +14,14 @@
   to = "/.netlify/functions/tmdb/:splat"
   status = 200
   force = true
+
+# Internal Instagram card tool (not linked from the site).
+[[redirects]]
+  from = "/card"
+  to = "/card.html"
+  status = 200
+
+[[headers]]
+  for = "/card*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"

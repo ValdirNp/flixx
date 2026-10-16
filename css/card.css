@@ -1,0 +1,689 @@
+/*
+ * /card — Instagram card (1080×1350) + internal tool page.
+ * Brand tokens (--flx-*) are injected from js/shared/tokens.js.
+ * Per-card colors: --accent (text-safe), --accent-fill, --on-accent, --text-1, --text-2.
+ * Export-safe CSS only: no filter, backdrop-filter or mix-blend-mode (Safari foreignObject).
+ */
+
+html,
+body {
+    margin: 0;
+    min-height: 100%;
+    background: var(--flx-ink);
+}
+
+/* ---------- Card ---------- */
+
+.fc-card {
+    position: relative;
+    flex-shrink: 0;
+    width: 1080px;
+    height: 1350px;
+    overflow: hidden;
+    background: var(--flx-ink);
+    color: var(--text-1);
+    font-family: var(--flx-font-body);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: geometricPrecision;
+}
+
+.fc-card *,
+.fc-card *::before,
+.fc-card *::after {
+    box-sizing: border-box;
+}
+
+.fc-bg,
+.fc-bleed,
+.fc-safe,
+.fc-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.fc-layer-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.fc-beam {
+    position: absolute;
+    top: -8%;
+    left: 50%;
+    width: 780px;
+    height: 62%;
+    transform: translateX(-50%);
+    background: linear-gradient(180deg, rgba(245, 240, 232, 0.09) 0%, rgba(245, 240, 232, 0.025) 45%, transparent 100%);
+    -webkit-clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%);
+    clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%);
+}
+
+/* Keeps the fixed footer legible over any background or bleed image. */
+.fc-scrim {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 300px;
+    background: linear-gradient(180deg, rgba(14, 13, 12, 0) 0%, rgba(14, 13, 12, 0.82) 55%, rgba(14, 13, 12, 0.95) 100%);
+}
+
+/* ~5% safe margins: Instagram's 3:4 grid crops ~34px per side of a 4:5 post. */
+.fc-safe {
+    display: flex;
+    flex-direction: column;
+    padding: 68px 56px;
+}
+
+.fc-main {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+/* ---------- Grid helpers ---------- */
+
+.fc-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.fc-col-center {
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+}
+
+.fc-col-middle {
+    flex: 1;
+    justify-content: center;
+}
+
+.fc-fill {
+    flex: 1;
+}
+
+.fc-row {
+    display: flex;
+    align-items: flex-start;
+}
+
+.fc-center {
+    justify-content: center;
+    text-align: center;
+}
+
+.fc-right {
+    align-items: flex-end;
+    text-align: right;
+}
+
+/* ---------- Typography ---------- */
+
+.fc-kicker {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: var(--flx-tracking-label);
+    text-transform: uppercase;
+    color: var(--accent);
+}
+
+.fc-kicker--boxed {
+    display: inline-block;
+    padding: 12px 16px;
+    border-radius: var(--flx-radius-chip);
+    background: rgba(14, 13, 12, 0.85);
+}
+
+.fc-title {
+    margin: 0;
+    overflow: hidden;
+    font-family: var(--flx-font-display);
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    color: var(--text-1);
+}
+
+.fc-clamp {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.fc-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    font-size: 26px;
+    font-weight: 500;
+    line-height: 1.2;
+    color: var(--text-2);
+}
+
+.fc-year {
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.fc-sep {
+    color: var(--text-2);
+    opacity: 0.7;
+}
+
+.fc-inline-rating {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    color: var(--text-1);
+}
+
+.fc-star {
+    color: var(--accent);
+}
+
+.fc-dim {
+    font-size: 20px;
+    color: var(--text-2);
+}
+
+.fc-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.fc-chip {
+    padding: 11px 16px;
+    border-radius: var(--flx-radius-chip);
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+/* Mirrors the site's type chips. */
+.fc-chips--outline .fc-chip {
+    border: 2px solid rgba(245, 240, 232, 0.4);
+    background: rgba(245, 240, 232, 0.08);
+    color: var(--text-1);
+}
+
+/* Mirrors the selected chip state, tinted by the accent. */
+.fc-chips--filled .fc-chip {
+    border: 2px solid var(--accent-fill);
+    background: var(--accent-fill);
+    color: var(--on-accent);
+    font-weight: 700;
+}
+
+/* Mirrors the site's uppercase filter labels. */
+.fc-chips--label {
+    gap: 12px;
+}
+
+.fc-chips--label .fc-chip {
+    padding: 0;
+    font-weight: 700;
+    letter-spacing: var(--flx-tracking-label);
+    text-transform: uppercase;
+    color: var(--accent);
+}
+
+.fc-chip-sep {
+    font-size: 22px;
+    color: var(--text-2);
+}
+
+.fc-synopsis {
+    display: -webkit-box;
+    margin: 0;
+    overflow: hidden;
+    font-size: 26px;
+    line-height: 1.5;
+    color: var(--text-1);
+    -webkit-box-orient: vertical;
+}
+
+.fc-rule {
+    width: 120px;
+    height: 8px;
+    border-radius: 2px;
+    background: var(--accent-fill);
+}
+
+/* ---------- Poster + rating ---------- */
+
+.fc-poster {
+    position: relative;
+    flex-shrink: 0;
+    overflow: hidden;
+    border-radius: var(--flx-radius);
+    background: var(--flx-paper);
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(245, 240, 232, 0.1);
+}
+
+.fc-poster > img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.fc-poster--print {
+    border: 10px solid var(--flx-cream);
+    border-radius: 4px;
+    transform: rotate(-2.5deg);
+}
+
+.fc-poster-fallback {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-top: 8px solid var(--accent-fill);
+    background: linear-gradient(160deg, var(--flx-paper) 0%, var(--flx-ink) 100%);
+}
+
+.fc-badge {
+    position: absolute;
+    z-index: 2;
+    min-width: 104px;
+    padding: 14px 16px 12px;
+    border-radius: var(--flx-radius);
+    background: var(--accent-fill);
+    color: var(--on-accent);
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+.fc-badge-value {
+    font-family: var(--flx-font-display);
+    font-size: 64px;
+    line-height: 0.9;
+    letter-spacing: 0.02em;
+}
+
+.fc-badge-label {
+    margin-top: 6px;
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+/* ---------- Footer (fixed on every card) ---------- */
+
+.fc-footer {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    height: 64px;
+    margin-top: 24px;
+    padding-top: 14px;
+    border-top: 2px solid rgba(245, 240, 232, 0.14);
+}
+
+.fc-wordmark {
+    font-family: var(--flx-font-display);
+    line-height: 0.85;
+    letter-spacing: 0.06em;
+    color: var(--flx-red);
+}
+
+.fc-footer-wordmark {
+    font-size: 56px;
+}
+
+.fc-footer-info,
+.fc-footer-side {
+    display: flex;
+    flex-direction: column;
+}
+
+.fc-footer-side {
+    flex: 1;
+}
+
+.fc-url {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--flx-cream);
+}
+
+.fc-tmdb {
+    margin-top: 4px;
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--flx-muted);
+}
+
+/* ---------- Layout: strip ---------- */
+
+.fc-strip {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 497px;
+    height: 100%;
+    overflow: hidden;
+    background: var(--flx-paper);
+}
+
+.fc-strip > .fc-layer-img {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.fc-strip-edge {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 6px;
+    height: 100%;
+    background: var(--accent-fill);
+}
+
+/* ---------- Layout: diagonal ---------- */
+
+.fc-diagonal-poster,
+.fc-diagonal-accent {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+}
+
+.fc-diagonal-poster {
+    height: 720px;
+    overflow: hidden;
+    background: var(--flx-paper);
+    -webkit-clip-path: polygon(0 0, 100% 0, 100% 78%, 0 100%);
+    clip-path: polygon(0 0, 100% 0, 100% 78%, 0 100%);
+}
+
+.fc-diagonal-accent {
+    height: 736px;
+    background: var(--accent-fill);
+    -webkit-clip-path: polygon(0 0, 100% 0, 100% 78.5%, 0 100%);
+    clip-path: polygon(0 0, 100% 0, 100% 78.5%, 0 100%);
+}
+
+/* ---------- Layout: ticket ---------- */
+
+/* Notches at the perforation (y = 586px) are transparent radial gradients. */
+.fc-ticket {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border-radius: var(--flx-radius);
+    background:
+        radial-gradient(circle at 0 586px, transparent 26px, var(--flx-paper) 27px) left top / 51% 100% no-repeat,
+        radial-gradient(circle at 100% 586px, transparent 26px, var(--flx-paper) 27px) right top / 51% 100% no-repeat;
+}
+
+.fc-ticket-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    padding: 0 36px;
+    background: var(--accent-fill);
+    color: var(--on-accent);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.fc-ticket-perforation {
+    margin: 0 44px;
+    border-top: 3px dashed rgba(245, 240, 232, 0.25);
+}
+
+.fc-ticket-stub {
+    padding: 30px 36px 34px;
+}
+
+.fc-ticket-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 32px;
+    margin-top: 24px;
+    font-size: 22px;
+    color: var(--text-1);
+}
+
+.fc-ticket-info b {
+    margin-right: 8px;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-2);
+}
+
+/* ---------- Tool page ---------- */
+
+.fp-page {
+    box-sizing: border-box;
+    max-width: 1240px;
+    min-height: 100vh;
+    margin: 0 auto;
+    padding: 20px 16px 48px;
+    color: var(--flx-cream);
+    font-family: var(--flx-font-body);
+}
+
+.fp-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px 16px;
+}
+
+.fp-brand {
+    margin: 0;
+    font-family: var(--flx-font-display);
+    font-size: 44px;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0.06em;
+    color: var(--flx-red);
+}
+
+.fp-brand span {
+    margin-left: 10px;
+    font-family: var(--flx-font-body);
+    font-size: 15px;
+    letter-spacing: 0;
+    color: var(--flx-muted);
+}
+
+.fp-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    font-size: 14px;
+}
+
+.fp-nav a,
+.fp-link {
+    color: var(--flx-gold);
+    text-decoration: none;
+}
+
+.fp-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 32px;
+    margin-top: 20px;
+}
+
+@media (max-width: 900px) {
+    .fp-layout {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 20px;
+    }
+}
+
+.fp-stage-wrap {
+    min-width: 0;
+}
+
+.fp-stage {
+    position: relative;
+    overflow: hidden;
+    margin: 0 auto;
+    border-radius: 6px;
+    background: var(--flx-paper);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.fp-scaler {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: top left;
+}
+
+.fp-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.fp-label {
+    margin-top: 10px;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--flx-gold);
+}
+
+.fp-meta {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--flx-muted);
+}
+
+.fp-meta strong {
+    color: var(--flx-cream);
+    font-weight: 600;
+}
+
+.fp-button {
+    padding: 12px 18px;
+    border: 1px solid rgba(154, 146, 136, 0.45);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--flx-cream);
+    font-family: var(--flx-font-body);
+    font-size: 15px;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.fp-button:hover {
+    border-color: var(--flx-gold);
+    background: rgba(212, 165, 116, 0.08);
+}
+
+.fp-button--primary {
+    border-color: var(--flx-red);
+    background: var(--flx-red);
+}
+
+.fp-button--primary:hover {
+    border-color: var(--flx-red-dark);
+    background: var(--flx-red-dark);
+}
+
+.fp-button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.fp-button-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.fp-caption {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 240px;
+    padding: 12px;
+    border: 1px solid var(--flx-line);
+    border-radius: 4px;
+    background: var(--flx-paper);
+    color: var(--flx-cream);
+    font-family: var(--flx-font-body);
+    font-size: 13px;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+.fp-notice {
+    min-height: 20px;
+    font-size: 13px;
+    color: var(--flx-gold);
+}
+
+.fp-status {
+    padding: 64px 16px;
+    color: var(--flx-muted);
+    text-align: center;
+}
+
+.fp-error {
+    color: var(--flx-red);
+}
+
+.fp-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.fp-gallery-item {
+    min-width: 0;
+    color: inherit;
+    text-decoration: none;
+}
+
+.fp-gallery-caption {
+    margin-top: 8px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--flx-muted);
+}
+
+.fp-gallery-caption strong {
+    color: var(--flx-cream);
+}
