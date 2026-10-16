@@ -12,13 +12,16 @@
  *   ?gallery=1|random|matrix|stress  review grids (see Gallery.js); &n= count, &cols= columns
  */
 import { todayKey, isValidDateKey } from './date';
-import { planForDate, planForSeed } from './daily';
+import { planForDate, planForSeed, CARD_FILTERS, SLOT_PAGES, SLOT_PAGE_SIZE } from './daily';
+import { hashString } from './prng';
 import { applyOverrides } from './variation';
 import { fetchMovieById, resolveMovieIdForSlot } from './movie';
 import { loadPosterAssets } from './poster';
 import { readDisplay, DEFAULT_DISPLAY } from './display';
 
-const DAILY_CACHE_PREFIX = 'flixx-card:';
+/** Keyed by the pool definition, so changing the card filters drops the stale daily picks. */
+const DAILY_CACHE_PREFIX = 'flixx-card:'
+    + hashString(JSON.stringify([CARD_FILTERS, SLOT_PAGES, SLOT_PAGE_SIZE])).toString(36) + ':';
 
 export function readRequest(search) {
     const params = new URLSearchParams(search);
