@@ -12,7 +12,10 @@ function Bleed(props) {
             <div
                 className="fc-layer"
                 style={{
-                    background: 'linear-gradient(90deg, rgba(14, 13, 12, 0.9) 0%, rgba(14, 13, 12, 0.45) 45%, rgba(14, 13, 12, 0.2) 100%)',
+                    background: [
+                        'linear-gradient(180deg, rgba(14, 13, 12, 0) 72%, rgba(14, 13, 12, 0.9) 92%)',
+                        'linear-gradient(90deg, rgba(14, 13, 12, 0.9) 0%, rgba(14, 13, 12, 0.45) 45%, rgba(14, 13, 12, 0.2) 100%)',
+                    ].join(', '),
                 }}
             />
             <div className="fc-strip-edge" />

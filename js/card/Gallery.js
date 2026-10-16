@@ -115,9 +115,9 @@ function matrixTasks(request) {
     const base = resolveCardModel(Object.assign({}, request, { overrides: {} }));
     const tasks = [];
     const links = [];
-    LAYOUTS.forEach((layout) => {
+    LAYOUTS.forEach((layout, layoutIndex) => {
         BACKGROUNDS.forEach((background, bgIndex) => {
-            const accent = ACCENT_MODES[(tasks.length + bgIndex) % ACCENT_MODES.length].id;
+            const accent = ACCENT_MODES[(layoutIndex + bgIndex) % ACCENT_MODES.length].id;
             tasks.push(() => base.then((model) => Object.assign({}, model, {
                 variation: Object.assign({}, model.variation, {
                     layout: layout.id,

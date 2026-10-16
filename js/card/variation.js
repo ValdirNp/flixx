@@ -15,9 +15,13 @@ export const RATING_POSITIONS = ['inline', 'corner-left', 'corner-right'];
 export const CHIP_STYLES = ['outline', 'filled', 'label'];
 export const LOGO_POSITIONS = ['left', 'right', 'center'];
 
-/** Picks every axis for a seed. `previousLayout` is excluded so consecutive days never share a layout. */
-export function chooseVariation(seed, previousLayout) {
-    const layoutPool = LAYOUTS.filter((layout) => layout.id !== previousLayout);
+/**
+ * Picks every axis for a seed. Layouts in `recentLayouts` (the previous days) are excluded,
+ * so consecutive days never share a layout.
+ */
+export function chooseVariation(seed, recentLayouts) {
+    const recent = recentLayouts || [];
+    const layoutPool = LAYOUTS.filter((layout) => !recent.includes(layout.id));
 
     return {
         layout: pick(rngFor(seed, 'layout'), layoutPool).id,
