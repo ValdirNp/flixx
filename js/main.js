@@ -1,4 +1,5 @@
 const {
+    Collapse,
     Container,
     makeStyles,
     createMuiTheme,
@@ -116,6 +117,120 @@ function getGenreNamesByIds(genreIds, mediaType) {
         .filter((genre) => genreIds.includes(genre.id))
         .map((genre) => genre.name)
         .join(', ');
+}
+
+const DEFAULT_YEARS = [1990, CURRENT_YEAR];
+
+/** Filters <-> query string, so a reload or a shared link keeps the same search. */
+function readFiltersFromUrl(search) {
+    const params = new URLSearchParams(search);
+    const ids = (key) => (params.get(key) || '')
+        .split(',')
+        .filter(Boolean)
+        .map(Number)
+        .filter((value) => Number.isInteger(value));
+    const oneOf = (key, list) => {
+        const value = params.get(key) || '';
+        return list.some((item) => item.id === value) ? value : '';
+    };
+
+    const mediaType = oneOf('tipo', MEDIA_TYPES);
+    const allowedGenres = getGenresForMediaType(mediaType).map((genre) => genre.id);
+    const selectedGenres = ids('generos').filter((id) => allowedGenres.includes(id));
+    const from = Number(params.get('de'));
+    const to = Number(params.get('ate'));
+    const validYear = (year) => Number.isInteger(year) && year >= 1900 && year <= CURRENT_YEAR;
+    const years = validYear(from) && validYear(to) && from <= to ? [from, to] : DEFAULT_YEARS;
+
+    return {
+        mediaType: mediaType,
+        selectedGenres: selectedGenres,
+        excludedGenres: ids('sem').filter((id) => allowedGenres.includes(id) && !selectedGenres.includes(id)),
+        moodKeywords: ids('clima').filter((id) => MOOD_KEYWORDS.some((keyword) => keyword.id === id)),
+        minRating: oneOf('nota', MIN_RATINGS),
+        runtimePreset: mediaType === 'tv' ? '' : oneOf('duracao', RUNTIME_PRESETS),
+        tvStatus: mediaType === 'movie' ? '' : oneOf('status', TV_STATUSES),
+        years: years,
+        originalLanguage: oneOf('idioma', ORIGINAL_LANGUAGES),
+        originCountry: oneOf('pais', ORIGIN_COUNTRIES),
+        selectedProviders: ids('streaming').filter((id) => STREAMING_PROVIDERS.some((provider) => provider.id === id)),
+    };
+}
+
+const FILTER_PARAMS = ['tipo', 'generos', 'sem', 'clima', 'nota', 'duracao', 'status', 'de', 'ate', 'idioma', 'pais', 'streaming'];
+
+/** Rewrites only the filter params of `currentSearch`; anything else (utm_*, etc.) is kept. */
+function filtersToSearch(filters, currentSearch) {
+    const params = new URLSearchParams(currentSearch || '');
+    FILTER_PARAMS.forEach((key) => params.delete(key));
+    const setList = (key, list) => {
+        if (list.length) {
+            params.set(key, list.join(','));
+        }
+    };
+    const setValue = (key, value) => {
+        if (value) {
+            params.set(key, value);
+        }
+    };
+
+    setValue('tipo', filters.mediaType);
+    setList('generos', filters.selectedGenres);
+    setList('sem', filters.excludedGenres);
+    setList('clima', filters.moodKeywords);
+    setValue('nota', filters.minRating);
+    setValue('duracao', filters.runtimePreset);
+    setValue('status', filters.tvStatus);
+    if (filters.years[0] !== DEFAULT_YEARS[0] || filters.years[1] !== DEFAULT_YEARS[1]) {
+        params.set('de', filters.years[0]);
+        params.set('ate', filters.years[1]);
+    }
+    setValue('idioma', filters.originalLanguage);
+    setValue('pais', filters.originCountry);
+    setList('streaming', filters.selectedProviders);
+
+    // Commas are safe in a query string: keep list params readable (generos=16,35).
+    const value = params.toString().replace(/%2C/g, ',');
+    return value ? '?' + value : '';
+}
+
+function summarizeNames(names) {
+    return names.length <= 2 ? names.join(', ') : names[0] + ' +' + (names.length - 1);
+}
+
+/** Active filters that live in the collapsible panel, as removable summary chips. */
+function describeAdvancedFilters(filters) {
+    const items = [];
+    const genres = getGenresForMediaType(filters.mediaType);
+
+    if (filters.excludedGenres.length) {
+        const names = genres.filter((genre) => filters.excludedGenres.includes(genre.id)).map((genre) => genre.name);
+        items.push({ key: 'sem', label: 'Sem ' + summarizeNames(names) });
+    }
+    if (filters.moodKeywords.length) {
+        const names = MOOD_KEYWORDS.filter((keyword) => filters.moodKeywords.includes(keyword.id)).map((keyword) => keyword.name);
+        items.push({ key: 'clima', label: 'Clima: ' + summarizeNames(names) });
+    }
+    if (filters.minRating) {
+        items.push({ key: 'nota', label: 'Nota ' + getMinRatingLabel(filters.minRating) });
+    }
+    if (filters.runtimePreset) {
+        items.push({ key: 'duracao', label: getRuntimePreset(filters.runtimePreset).name });
+    }
+    if (filters.tvStatus) {
+        items.push({ key: 'status', label: getTvStatusLabel(filters.tvStatus) });
+    }
+    if (filters.years[0] !== DEFAULT_YEARS[0] || filters.years[1] !== DEFAULT_YEARS[1]) {
+        items.push({ key: 'periodo', label: filters.years[0] + '–' + filters.years[1] });
+    }
+    if (filters.originalLanguage) {
+        items.push({ key: 'idioma', label: getLanguageName(filters.originalLanguage) });
+    }
+    if (filters.originCountry) {
+        items.push({ key: 'pais', label: getCountryName(filters.originCountry) });
+    }
+
+    return items;
 }
 
 const theme = createMuiTheme({
@@ -423,6 +538,84 @@ const useStyles = makeStyles((muiTheme) => ({
             borderColor: '#C40812',
         },
     },
+    advancedBar: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        gap: muiTheme.spacing(1),
+        marginTop: muiTheme.spacing(-1),
+        marginBottom: muiTheme.spacing(3),
+    },
+    advancedToggle: {
+        borderColor: 'rgba(154, 146, 136, 0.45)',
+        borderRadius: 4,
+        color: '#F5F0E8',
+        padding: muiTheme.spacing(0.75, 1.75),
+        '&:hover': {
+            borderColor: '#D4A574',
+            backgroundColor: 'rgba(212, 165, 116, 0.08)',
+        },
+    },
+    advancedCount: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: 20,
+        height: 20,
+        marginLeft: muiTheme.spacing(1),
+        padding: '0 6px',
+        borderRadius: 10,
+        backgroundColor: '#E50914',
+        color: '#F5F0E8',
+        fontSize: '0.75rem',
+        fontWeight: 700,
+        lineHeight: 1,
+    },
+    advancedCaret: {
+        display: 'inline-block',
+        marginLeft: muiTheme.spacing(1),
+        color: muiTheme.palette.text.secondary,
+        transition: 'transform 0.2s ease',
+    },
+    advancedCaretOpen: {
+        transform: 'rotate(180deg)',
+    },
+    activeChip: {
+        borderRadius: 4,
+        border: '1px solid rgba(212, 165, 116, 0.55)',
+        backgroundColor: 'rgba(212, 165, 116, 0.1)',
+        color: '#F5F0E8',
+        fontWeight: 500,
+        '& .MuiChip-deleteIcon': {
+            color: muiTheme.palette.text.secondary,
+            '&:hover': {
+                color: '#F5F0E8',
+            },
+        },
+    },
+    clearButton: {
+        color: muiTheme.palette.text.secondary,
+        fontSize: '0.85rem',
+        '&:hover': {
+            color: '#F5F0E8',
+            backgroundColor: 'transparent',
+        },
+    },
+    advancedGrid: {
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0, 1fr)',
+        columnGap: muiTheme.spacing(4),
+        paddingTop: muiTheme.spacing(1),
+        [muiTheme.breakpoints.up('sm')]: {
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+        },
+        [muiTheme.breakpoints.up('md')]: {
+            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+        },
+    },
+    fullRow: {
+        gridColumn: '1 / -1',
+    },
     actions: {
         display: 'flex',
         flexWrap: 'wrap',
@@ -648,6 +841,45 @@ function Title() {
     );
 }
 
+function AdvancedFiltersToggle(props) {
+    const classes = useStyles();
+    const count = props.activeFilters.length;
+
+    return (
+        <div className={classes.advancedBar}>
+            <Button
+                className={classes.advancedToggle}
+                variant="outlined"
+                onClick={props.onToggle}
+                aria-expanded={props.open}
+                aria-controls="advanced-filters"
+            >
+                {props.open ? 'Menos filtros' : 'Mais filtros'}
+                {count ? <span className={classes.advancedCount}>{count}</span> : null}
+                <span
+                    className={classes.advancedCaret + (props.open ? ' ' + classes.advancedCaretOpen : '')}
+                    aria-hidden="true"
+                >
+                    ▾
+                </span>
+            </Button>
+            {!props.open && props.activeFilters.map((filter) => (
+                <Chip
+                    key={filter.key}
+                    label={filter.label}
+                    onDelete={filter.clear}
+                    className={classes.activeChip}
+                />
+            ))}
+            {count ? (
+                <Button className={classes.clearButton} onClick={props.onClear}>
+                    Limpar
+                </Button>
+            ) : null}
+        </div>
+    );
+}
+
 function Filters(props) {
     const classes = useStyles();
     const genres = getGenresForMediaType(props.mediaType);
@@ -795,232 +1027,6 @@ function Filters(props) {
             </FormControl>
 
             <FormControl className={classes.formControl}>
-                <Typography className={classes.filterLabel} id="exclude-genre-label">
-                    Excluir gêneros
-                </Typography>
-                <Select
-                    id="exclude-genre"
-                    multiple
-                    displayEmpty
-                    value={props.excludedGenres}
-                    onChange={handleExcludedGenreChange}
-                    input={<Input />}
-                    MenuProps={MenuProps}
-                    renderValue={(selected) => {
-                        if (!selected.length) {
-                            return <span style={{ color: '#9A9288' }}>Nenhum excluído</span>;
-                        }
-                        return excludedGenreNames;
-                    }}
-                >
-                    {genres.map((genre) => (
-                        <MenuItem
-                            key={'exclude-' + genre.id}
-                            value={genre.id}
-                            style={{
-                                fontWeight: props.excludedGenres.includes(genre.id) ? 600 : 400,
-                            }}
-                        >
-                            {genre.name}
-                        </MenuItem>
-                    ))}
-                </Select>
-            </FormControl>
-
-            <FormControl className={classes.formControl}>
-                <Typography className={classes.filterLabel} id="mood-label">
-                    Clima
-                </Typography>
-                <Select
-                    id="mood"
-                    multiple
-                    displayEmpty
-                    value={props.moodKeywords}
-                    onChange={handleMoodChange}
-                    input={<Input />}
-                    MenuProps={MenuProps}
-                    renderValue={(selected) => {
-                        if (!selected.length) {
-                            return <span style={{ color: '#9A9288' }}>Qualquer clima</span>;
-                        }
-                        return selectedMoodNames;
-                    }}
-                >
-                    {MOOD_KEYWORDS.map((keyword) => (
-                        <MenuItem
-                            key={keyword.id}
-                            value={keyword.id}
-                            style={{
-                                fontWeight: props.moodKeywords.includes(keyword.id) ? 600 : 400,
-                            }}
-                        >
-                            {keyword.name}
-                        </MenuItem>
-                    ))}
-                </Select>
-            </FormControl>
-
-            <FormControl className={classes.formControl}>
-                <Typography className={classes.filterLabel} id="min-rating-label">
-                    Nota mínima
-                </Typography>
-                <Select
-                    id="min-rating"
-                    displayEmpty
-                    value={props.minRating}
-                    onChange={handleMinRatingChange}
-                    input={<Input />}
-                    MenuProps={MenuProps}
-                    renderValue={(selected) => {
-                        if (!selected) {
-                            return <span style={{ color: '#9A9288' }}>Qualquer nota</span>;
-                        }
-                        return getMinRatingLabel(selected);
-                    }}
-                >
-                    {MIN_RATINGS.map((rating) => (
-                        <MenuItem key={rating.id || 'any-rating'} value={rating.id}>
-                            {rating.name}
-                        </MenuItem>
-                    ))}
-                </Select>
-            </FormControl>
-
-            {showRuntime ? (
-                <FormControl className={classes.formControl}>
-                    <Typography className={classes.filterLabel} id="runtime-label">
-                        Duração do filme
-                    </Typography>
-                    <Select
-                        id="runtime"
-                        displayEmpty
-                        value={props.runtimePreset}
-                        onChange={handleRuntimeChange}
-                        input={<Input />}
-                        MenuProps={MenuProps}
-                        renderValue={(selected) => {
-                            const preset = getRuntimePreset(selected);
-                            if (!selected) {
-                                return <span style={{ color: '#9A9288' }}>Qualquer duração</span>;
-                            }
-                            return preset.name;
-                        }}
-                    >
-                        {RUNTIME_PRESETS.map((preset) => (
-                            <MenuItem key={preset.id || 'any-runtime'} value={preset.id}>
-                                {preset.name}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-            ) : null}
-
-            {showTvStatus ? (
-                <FormControl className={classes.formControl}>
-                    <Typography className={classes.filterLabel} id="tv-status-label">
-                        Status da série
-                    </Typography>
-                    <Select
-                        id="tv-status"
-                        displayEmpty
-                        value={props.tvStatus}
-                        onChange={handleTvStatusChange}
-                        input={<Input />}
-                        MenuProps={MenuProps}
-                        renderValue={(selected) => {
-                            if (!selected) {
-                                return <span style={{ color: '#9A9288' }}>Qualquer status</span>;
-                            }
-                            return getTvStatusLabel(selected);
-                        }}
-                    >
-                        {TV_STATUSES.map((status) => (
-                            <MenuItem key={status.id || 'any-status'} value={status.id}>
-                                {status.name}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-            ) : null}
-
-            <FormControl className={classes.formControl}>
-                <Typography className={classes.filterLabel} id="years-label">
-                    Período
-                </Typography>
-                <div className={classes.yearsRow}>
-                    <span className={classes.yearValue}>{props.years[0]}</span>
-                    <span className={classes.yearValue}>{props.years[1]}</span>
-                </div>
-                <Slider
-                    value={props.years}
-                    onChange={handleYearsChange}
-                    valueLabelDisplay="auto"
-                    aria-labelledby="years-label"
-                    min={1900}
-                    step={1}
-                    max={CURRENT_YEAR}
-                />
-            </FormControl>
-
-            <FormControl className={classes.formControl}>
-                <Typography className={classes.filterLabel} id="language-label">
-                    Idioma original
-                </Typography>
-                <Select
-                    id="original-language"
-                    displayEmpty
-                    value={props.originalLanguage}
-                    onChange={handleLanguageChange}
-                    input={<Input />}
-                    MenuProps={MenuProps}
-                    renderValue={(selected) => {
-                        if (!selected) {
-                            return <span style={{ color: '#9A9288' }}>Qualquer idioma</span>;
-                        }
-                        return getLanguageName(selected);
-                    }}
-                >
-                    <MenuItem value="">
-                        Qualquer idioma
-                    </MenuItem>
-                    {ORIGINAL_LANGUAGES.map((language) => (
-                        <MenuItem key={language.id} value={language.id}>
-                            {language.name}
-                        </MenuItem>
-                    ))}
-                </Select>
-            </FormControl>
-
-            <FormControl className={classes.formControl}>
-                <Typography className={classes.filterLabel} id="country-label">
-                    País de origem
-                </Typography>
-                <Select
-                    id="origin-country"
-                    displayEmpty
-                    value={props.originCountry}
-                    onChange={handleCountryChange}
-                    input={<Input />}
-                    MenuProps={MenuProps}
-                    renderValue={(selected) => {
-                        if (!selected) {
-                            return <span style={{ color: '#9A9288' }}>Qualquer país</span>;
-                        }
-                        return getCountryName(selected);
-                    }}
-                >
-                    <MenuItem value="">
-                        Qualquer país
-                    </MenuItem>
-                    {ORIGIN_COUNTRIES.map((country) => (
-                        <MenuItem key={country.id} value={country.id}>
-                            {country.name}
-                        </MenuItem>
-                    ))}
-                </Select>
-            </FormControl>
-
-            <FormControl className={classes.formControl}>
                 <Typography className={classes.filterLabel} id="streaming-label">
                     Onde assistir
                 </Typography>
@@ -1043,6 +1049,243 @@ function Filters(props) {
                     })}
                 </div>
             </FormControl>
+            <AdvancedFiltersToggle
+                open={props.advancedOpen}
+                onToggle={() => props.setAdvancedOpen(!props.advancedOpen)}
+                activeFilters={props.activeAdvancedFilters}
+                onClear={props.clearAdvancedFilters}
+            />
+
+            <Collapse in={props.advancedOpen} timeout="auto">
+                <div className={classes.advancedGrid} id="advanced-filters">
+                    <FormControl className={classes.formControl}>
+                        <Typography className={classes.filterLabel} id="exclude-genre-label">
+                            Excluir gêneros
+                        </Typography>
+                        <Select
+                            id="exclude-genre"
+                            multiple
+                            displayEmpty
+                            value={props.excludedGenres}
+                            onChange={handleExcludedGenreChange}
+                            input={<Input />}
+                            MenuProps={MenuProps}
+                            renderValue={(selected) => {
+                                if (!selected.length) {
+                                    return <span style={{ color: '#9A9288' }}>Nenhum excluído</span>;
+                                }
+                                return excludedGenreNames;
+                            }}
+                        >
+                            {genres.map((genre) => (
+                                <MenuItem
+                                    key={'exclude-' + genre.id}
+                                    value={genre.id}
+                                    style={{
+                                        fontWeight: props.excludedGenres.includes(genre.id) ? 600 : 400,
+                                    }}
+                                >
+                                    {genre.name}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+
+                    <FormControl className={classes.formControl}>
+                        <Typography className={classes.filterLabel} id="mood-label">
+                            Clima
+                        </Typography>
+                        <Select
+                            id="mood"
+                            multiple
+                            displayEmpty
+                            value={props.moodKeywords}
+                            onChange={handleMoodChange}
+                            input={<Input />}
+                            MenuProps={MenuProps}
+                            renderValue={(selected) => {
+                                if (!selected.length) {
+                                    return <span style={{ color: '#9A9288' }}>Qualquer clima</span>;
+                                }
+                                return selectedMoodNames;
+                            }}
+                        >
+                            {MOOD_KEYWORDS.map((keyword) => (
+                                <MenuItem
+                                    key={keyword.id}
+                                    value={keyword.id}
+                                    style={{
+                                        fontWeight: props.moodKeywords.includes(keyword.id) ? 600 : 400,
+                                    }}
+                                >
+                                    {keyword.name}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+
+                    <FormControl className={classes.formControl}>
+                        <Typography className={classes.filterLabel} id="min-rating-label">
+                            Nota mínima
+                        </Typography>
+                        <Select
+                            id="min-rating"
+                            displayEmpty
+                            value={props.minRating}
+                            onChange={handleMinRatingChange}
+                            input={<Input />}
+                            MenuProps={MenuProps}
+                            renderValue={(selected) => {
+                                if (!selected) {
+                                    return <span style={{ color: '#9A9288' }}>Qualquer nota</span>;
+                                }
+                                return getMinRatingLabel(selected);
+                            }}
+                        >
+                            {MIN_RATINGS.map((rating) => (
+                                <MenuItem key={rating.id || 'any-rating'} value={rating.id}>
+                                    {rating.name}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+
+                    {showRuntime ? (
+                        <FormControl className={classes.formControl}>
+                            <Typography className={classes.filterLabel} id="runtime-label">
+                                Duração do filme
+                            </Typography>
+                            <Select
+                                id="runtime"
+                                displayEmpty
+                                value={props.runtimePreset}
+                                onChange={handleRuntimeChange}
+                                input={<Input />}
+                                MenuProps={MenuProps}
+                                renderValue={(selected) => {
+                                    const preset = getRuntimePreset(selected);
+                                    if (!selected) {
+                                        return <span style={{ color: '#9A9288' }}>Qualquer duração</span>;
+                                    }
+                                    return preset.name;
+                                }}
+                            >
+                                {RUNTIME_PRESETS.map((preset) => (
+                                    <MenuItem key={preset.id || 'any-runtime'} value={preset.id}>
+                                        {preset.name}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    ) : null}
+
+                    {showTvStatus ? (
+                        <FormControl className={classes.formControl}>
+                            <Typography className={classes.filterLabel} id="tv-status-label">
+                                Status da série
+                            </Typography>
+                            <Select
+                                id="tv-status"
+                                displayEmpty
+                                value={props.tvStatus}
+                                onChange={handleTvStatusChange}
+                                input={<Input />}
+                                MenuProps={MenuProps}
+                                renderValue={(selected) => {
+                                    if (!selected) {
+                                        return <span style={{ color: '#9A9288' }}>Qualquer status</span>;
+                                    }
+                                    return getTvStatusLabel(selected);
+                                }}
+                            >
+                                {TV_STATUSES.map((status) => (
+                                    <MenuItem key={status.id || 'any-status'} value={status.id}>
+                                        {status.name}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    ) : null}
+
+                    <FormControl className={classes.formControl}>
+                        <Typography className={classes.filterLabel} id="language-label">
+                            Idioma original
+                        </Typography>
+                        <Select
+                            id="original-language"
+                            displayEmpty
+                            value={props.originalLanguage}
+                            onChange={handleLanguageChange}
+                            input={<Input />}
+                            MenuProps={MenuProps}
+                            renderValue={(selected) => {
+                                if (!selected) {
+                                    return <span style={{ color: '#9A9288' }}>Qualquer idioma</span>;
+                                }
+                                return getLanguageName(selected);
+                            }}
+                        >
+                            <MenuItem value="">
+                                Qualquer idioma
+                            </MenuItem>
+                            {ORIGINAL_LANGUAGES.map((language) => (
+                                <MenuItem key={language.id} value={language.id}>
+                                    {language.name}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+
+                    <FormControl className={classes.formControl}>
+                        <Typography className={classes.filterLabel} id="country-label">
+                            País de origem
+                        </Typography>
+                        <Select
+                            id="origin-country"
+                            displayEmpty
+                            value={props.originCountry}
+                            onChange={handleCountryChange}
+                            input={<Input />}
+                            MenuProps={MenuProps}
+                            renderValue={(selected) => {
+                                if (!selected) {
+                                    return <span style={{ color: '#9A9288' }}>Qualquer país</span>;
+                                }
+                                return getCountryName(selected);
+                            }}
+                        >
+                            <MenuItem value="">
+                                Qualquer país
+                            </MenuItem>
+                            {ORIGIN_COUNTRIES.map((country) => (
+                                <MenuItem key={country.id} value={country.id}>
+                                    {country.name}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+
+                    <FormControl className={classes.formControl + ' ' + classes.fullRow}>
+                        <Typography className={classes.filterLabel} id="years-label">
+                            Período
+                        </Typography>
+                        <div className={classes.yearsRow}>
+                            <span className={classes.yearValue}>{props.years[0]}</span>
+                            <span className={classes.yearValue}>{props.years[1]}</span>
+                        </div>
+                        <Slider
+                            value={props.years}
+                            onChange={handleYearsChange}
+                            valueLabelDisplay="auto"
+                            aria-labelledby="years-label"
+                            min={1900}
+                            step={1}
+                            max={CURRENT_YEAR}
+                        />
+                    </FormControl>
+
+                </div>
+            </Collapse>
         </div>
     );
 }
@@ -1067,7 +1310,7 @@ function SuggestionButton(props) {
             >
                 {props.loading ? 'Procurando…' : buttonLabel}
             </Button>
-            {!props.hasResult && !props.loading && (
+            {!props.hasResult && !props.loading && !props.hasProviders && (
                 <Typography className={classes.hint}>
                     Sem filtro de streaming = qualquer plataforma
                 </Typography>
@@ -1255,20 +1498,69 @@ function getRandomNumber(bottom, top) {
 
 function App() {
     const classes = useStyles();
+    const initialFilters = React.useMemo(() => readFiltersFromUrl(window.location.search), []);
     const [suggestedMovie, updateSuggestedMovie] = React.useState(null);
-    const [mediaType, setMediaType] = React.useState('');
-    const [selectedGenres, selectGenre] = React.useState([]);
-    const [excludedGenres, setExcludedGenres] = React.useState([]);
-    const [moodKeywords, setMoodKeywords] = React.useState([]);
-    const [minRating, setMinRating] = React.useState('');
-    const [runtimePreset, setRuntimePreset] = React.useState('');
-    const [tvStatus, setTvStatus] = React.useState('');
-    const [years, setYears] = React.useState([1990, CURRENT_YEAR]);
-    const [originalLanguage, setOriginalLanguage] = React.useState('');
-    const [originCountry, setOriginCountry] = React.useState('');
-    const [selectedProviders, setProviders] = React.useState([]);
+    const [mediaType, setMediaType] = React.useState(initialFilters.mediaType);
+    const [selectedGenres, selectGenre] = React.useState(initialFilters.selectedGenres);
+    const [excludedGenres, setExcludedGenres] = React.useState(initialFilters.excludedGenres);
+    const [moodKeywords, setMoodKeywords] = React.useState(initialFilters.moodKeywords);
+    const [minRating, setMinRating] = React.useState(initialFilters.minRating);
+    const [runtimePreset, setRuntimePreset] = React.useState(initialFilters.runtimePreset);
+    const [tvStatus, setTvStatus] = React.useState(initialFilters.tvStatus);
+    const [years, setYears] = React.useState(initialFilters.years);
+    const [originalLanguage, setOriginalLanguage] = React.useState(initialFilters.originalLanguage);
+    const [originCountry, setOriginCountry] = React.useState(initialFilters.originCountry);
+    const [selectedProviders, setProviders] = React.useState(initialFilters.selectedProviders);
+    // The panel starts open when the link already carries advanced filters.
+    const [advancedOpen, setAdvancedOpen] = React.useState(
+        () => describeAdvancedFilters(initialFilters).length > 0
+    );
     const [loading, setLoading] = React.useState(false);
     const [error, setError] = React.useState('');
+
+    const filters = {
+        mediaType: mediaType,
+        selectedGenres: selectedGenres,
+        excludedGenres: excludedGenres,
+        moodKeywords: moodKeywords,
+        minRating: minRating,
+        runtimePreset: runtimePreset,
+        tvStatus: tvStatus,
+        years: years,
+        originalLanguage: originalLanguage,
+        originCountry: originCountry,
+        selectedProviders: selectedProviders,
+    };
+    const filtersKey = filtersToSearch(filters, '');
+
+    React.useEffect(() => {
+        const nextSearch = filtersToSearch(filters, window.location.search);
+        if (nextSearch !== window.location.search) {
+            window.history.replaceState(null, '', window.location.pathname + nextSearch);
+        }
+    }, [filtersKey]);
+
+    const clearAdvancedFilter = function (key) {
+        switch (key) {
+            case 'sem': setExcludedGenres([]); break;
+            case 'clima': setMoodKeywords([]); break;
+            case 'nota': setMinRating(''); break;
+            case 'duracao': setRuntimePreset(''); break;
+            case 'status': setTvStatus(''); break;
+            case 'periodo': setYears(DEFAULT_YEARS); break;
+            case 'idioma': setOriginalLanguage(''); break;
+            case 'pais': setOriginCountry(''); break;
+            default: break;
+        }
+    };
+
+    const activeAdvancedFilters = describeAdvancedFilters(filters).map((item) => Object.assign({}, item, {
+        clear: () => clearAdvancedFilter(item.key),
+    }));
+
+    const clearAdvancedFilters = function () {
+        activeAdvancedFilters.forEach((item) => clearAdvancedFilter(item.key));
+    };
 
     const getTitleDetails = function (type, id, requestedOriginCountry) {
         return fetch(titleDetailsUrl(type, id))
@@ -1394,12 +1686,17 @@ function App() {
                         setOriginCountry={setOriginCountry}
                         selectedProviders={selectedProviders}
                         setProviders={setProviders}
+                        advancedOpen={advancedOpen}
+                        setAdvancedOpen={setAdvancedOpen}
+                        activeAdvancedFilters={activeAdvancedFilters}
+                        clearAdvancedFilters={clearAdvancedFilters}
                     />
                     <SuggestionButton
                         getSuggestion={getSuggestion}
                         loading={loading}
                         mediaType={mediaType}
                         hasResult={Boolean(suggestedMovie && suggestedMovie.title)}
+                        hasProviders={selectedProviders.length > 0}
                     />
                     {error ? (
                         <Typography className={classes.errorText} role="alert">
