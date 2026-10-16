@@ -178,7 +178,10 @@ export function Gallery(props) {
     let previousLayout = null;
 
     return (
-        <div className="fp-gallery">
+        <div
+            className="fp-gallery"
+            style={request.cols ? { gridTemplateColumns: 'repeat(' + request.cols + ', minmax(0, 1fr))' } : undefined}
+        >
             {items.map((item, index) => {
                 const model = item.model;
                 const repeatsLayout = request.gallery === '1' && model && model.variation.layout === previousLayout;

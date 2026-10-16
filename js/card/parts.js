@@ -68,6 +68,13 @@ function fitElement(el, opts) {
         el.style.fontSize = size + 'px';
     }
 
+    // A single word wider than the box (e.g. a one-word title) may go below min before breaking mid-word.
+    const floor = Math.round(opts.min * 0.7);
+    while (size > floor && el.scrollWidth > el.clientWidth + 1) {
+        size = Math.max(floor, size - 2);
+        el.style.fontSize = size + 'px';
+    }
+
     if (!fits()) {
         el.style.overflowWrap = 'anywhere';
         const lines = Math.max(1, Math.floor((limit() - 1) / (size * lineHeight)));
@@ -219,9 +226,13 @@ export function RatingBadge(props) {
     );
 }
 
-/** Typographic stand-in when TMDB has no poster. Font sizes scale with the frame width. */
+/** Typographic stand-in when TMDB has no poster. Font sizes scale with the frame width; `decorative` drops the text. */
 export function PosterFallback(props) {
     const width = props.width;
+    if (props.decorative) {
+        // Bleed layouts already show the title huge: keep the stand-in purely graphic.
+        return <div className="fc-poster-fallback fc-poster-fallback--decorative" />;
+    }
     return (
         <div className="fc-poster-fallback" style={{ padding: Math.round(width * 0.08) }}>
             <div className="fc-wordmark" style={{ fontSize: Math.round(width * 0.12) }}>Flixx</div>

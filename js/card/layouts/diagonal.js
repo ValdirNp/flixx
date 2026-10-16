@@ -9,7 +9,7 @@ function Bleed(props) {
                 {props.assets.hasPoster ? (
                     <img className="fc-layer-img" src={props.assets.posterUrl} alt="" style={{ objectPosition: '50% 22%' }} />
                 ) : (
-                    <PosterFallback movie={props.movie} width={1080} />
+                    <PosterFallback movie={props.movie} width={1080} decorative />
                 )}
                 <div
                     className="fc-layer"

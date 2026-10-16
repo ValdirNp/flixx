@@ -143,9 +143,9 @@ body {
     background: rgba(14, 13, 12, 0.85);
 }
 
+/* overflow stays visible so accented capitals (É, Ã, Ô) above the tight line box are never clipped. */
 .fc-title {
     margin: 0;
-    overflow: hidden;
     font-family: var(--flx-font-display);
     font-weight: 400;
     letter-spacing: 0.01em;
@@ -397,7 +397,7 @@ body {
     top: 0;
     left: 0;
     width: 6px;
-    height: 100%;
+    height: calc(100% - 190px);
     background: var(--accent-fill);
 }
 
@@ -636,7 +636,7 @@ body {
 .fp-caption {
     box-sizing: border-box;
     width: 100%;
-    min-height: 240px;
+    min-height: 360px;
     padding: 12px;
     border: 1px solid var(--flx-line);
     border-radius: 4px;
@@ -686,4 +686,12 @@ body {
 
 .fp-gallery-caption strong {
     color: var(--flx-cream);
+}
+
+.fc-poster-fallback--decorative {
+    border-top: 0;
+    background:
+        radial-gradient(ellipse 80% 60% at 70% 30%, rgba(229, 9, 20, 0.18), transparent 60%),
+        repeating-linear-gradient(135deg, rgba(245, 240, 232, 0.04) 0 2px, transparent 2px 28px),
+        linear-gradient(160deg, var(--flx-paper) 0%, var(--flx-ink) 100%);
 }

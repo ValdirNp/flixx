@@ -7,7 +7,7 @@
  *   ?layout=<id>       forces a layout       (see layouts/index.js)
  *   ?theme=<id>        forces a background   (blur | gradient | solid | beam)
  *   ?accent=<id>       forces the accent     (poster | brand)
- *   ?gallery=1|random|matrix|stress  review grids (see Gallery.js)
+ *   ?gallery=1|random|matrix|stress  review grids (see Gallery.js); &n= count, &cols= columns
  */
 import { todayKey, isValidDateKey } from './date';
 import { planForDate, planForSeed } from './daily';
@@ -32,6 +32,7 @@ export function readRequest(search) {
         },
         gallery: params.get('gallery'),
         count: Number(params.get('n')) || 0,
+        cols: Math.min(Number(params.get('cols')) || 0, 8),
     };
 }
 
