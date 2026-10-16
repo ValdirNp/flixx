@@ -20,6 +20,8 @@ export const CARD_FILTERS = {
     minVotes: 300,
     sortBy: 'vote_count.desc',
     minYear: 1980,
+    /** Instagram posts should point somewhere to watch: only titles on a BR subscription service. */
+    onlyStreaming: true,
 };
 
 export const SLOT_PAGES = 2;

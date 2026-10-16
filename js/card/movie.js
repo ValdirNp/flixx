@@ -36,6 +36,7 @@ function discoverPage(year, page) {
         minRating: CARD_FILTERS.minRating,
         minVotes: CARD_FILTERS.minVotes,
         sortBy: CARD_FILTERS.sortBy,
+        onlyStreaming: CARD_FILTERS.onlyStreaming,
     });
     params.page = page;
     return getJson(discoverUrl(CARD_FILTERS.mediaType, params));
