@@ -157,8 +157,12 @@ function readFiltersFromUrl(search) {
     };
 }
 
-function filtersToSearch(filters) {
-    const params = new URLSearchParams();
+const FILTER_PARAMS = ['tipo', 'generos', 'sem', 'clima', 'nota', 'duracao', 'status', 'de', 'ate', 'idioma', 'pais', 'streaming'];
+
+/** Rewrites only the filter params of `currentSearch`; anything else (utm_*, etc.) is kept. */
+function filtersToSearch(filters, currentSearch) {
+    const params = new URLSearchParams(currentSearch || '');
+    FILTER_PARAMS.forEach((key) => params.delete(key));
     const setList = (key, list) => {
         if (list.length) {
             params.set(key, list.join(','));
@@ -1527,13 +1531,14 @@ function App() {
         originCountry: originCountry,
         selectedProviders: selectedProviders,
     };
-    const filtersSearch = filtersToSearch(filters);
+    const filtersKey = filtersToSearch(filters, '');
 
     React.useEffect(() => {
-        if (filtersSearch !== window.location.search) {
-            window.history.replaceState(null, '', window.location.pathname + filtersSearch);
+        const nextSearch = filtersToSearch(filters, window.location.search);
+        if (nextSearch !== window.location.search) {
+            window.history.replaceState(null, '', window.location.pathname + nextSearch);
         }
-    }, [filtersSearch]);
+    }, [filtersKey]);
 
     const clearAdvancedFilter = function (key) {
         switch (key) {
