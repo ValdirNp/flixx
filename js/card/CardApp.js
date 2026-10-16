@@ -1,4 +1,4 @@
-import { describeVariation } from './variation';
+import { applyOverrides, describeVariation } from './variation';
 import { formatDateBR } from './date';
 import { randomSeed } from './prng';
 import { readRequest, resolveCardModel, buildSearch } from './model';
@@ -6,6 +6,10 @@ import { buildCaption, pngFileName, copyText } from './caption';
 import { exportCardPng, downloadBlob, canShareFiles, shareBlob } from './export';
 import { ScaledCard } from './Preview';
 import { Gallery } from './Gallery';
+import { Controls } from './Controls';
+
+/** Params that pick the data (movie); everything else only re-renders the same card. */
+const DATA_PARAMS = ['date', 'seed', 'movie'];
 
 function useLocationSearch() {
     const [search, setSearch] = React.useState(window.location.search);
@@ -16,21 +20,39 @@ function useLocationSearch() {
         return () => window.removeEventListener('popstate', onPop);
     }, []);
 
+    /** New history entry with exactly these params. */
     const navigate = (params) => {
         const next = buildSearch(params);
         window.history.pushState(null, '', window.location.pathname + next);
         setSearch(next);
     };
 
-    return [search, navigate];
+    /** Merges a patch into the current params (null removes) without a new history entry. */
+    const update = (patch) => {
+        const params = new URLSearchParams(window.location.search);
+        Object.keys(patch).forEach((key) => {
+            if (patch[key] === null || patch[key] === undefined || patch[key] === '') {
+                params.delete(key);
+            } else {
+                params.set(key, patch[key]);
+            }
+        });
+        const value = params.toString();
+        const next = value ? '?' + value : '';
+        window.history.replaceState(null, '', window.location.pathname + next);
+        setSearch(next);
+    };
+
+    return [search, navigate, update];
 }
 
 function SingleCard(props) {
     const request = props.request;
     const urlParams = new URLSearchParams(props.search);
     const urlDate = urlParams.get('date');
+    const dataKey = DATA_PARAMS.map((key) => urlParams.get(key) || '').join('|');
     const cardRef = React.useRef(null);
-    const [state, setState] = React.useState({ status: 'loading', model: null, error: '' });
+    const [state, setState] = React.useState({ status: 'loading', base: null, error: '' });
     const [busy, setBusy] = React.useState('');
     const [notice, setNotice] = React.useState('');
     const [viewportHeight, setViewportHeight] = React.useState(window.innerHeight);
@@ -43,28 +65,31 @@ function SingleCard(props) {
 
     React.useEffect(() => {
         let cancelled = false;
-        setState({ status: 'loading', model: null, error: '' });
+        setState({ status: 'loading', base: null, error: '' });
         resolveCardModel(request)
-            .then((model) => {
+            .then((base) => {
                 if (!cancelled) {
-                    setState({ status: 'ready', model: model, error: '' });
+                    setState({ status: 'ready', base: base, error: '' });
                 }
             })
             .catch((err) => {
                 console.error(err);
                 if (!cancelled) {
-                    setState({ status: 'error', model: null, error: err.message || 'Falha ao montar o card.' });
+                    setState({ status: 'error', base: null, error: err.message || 'Falha ao montar o card.' });
                 }
             });
         return () => {
             cancelled = true;
         };
-    }, [props.search]);
+    }, [dataKey]);
 
-    const model = state.model;
+    // Variation and display come from the current URL on every render: controls never refetch.
+    const model = state.base ? Object.assign({}, state.base, {
+        variation: applyOverrides(state.base.plan.variation, request.overrides),
+        display: request.display,
+    }) : null;
     const caption = model ? buildCaption(model.movie) : '';
-    const isOverride = Boolean(request.seed || request.movieId || request.overrides.layout
-        || request.overrides.theme || request.overrides.accent);
+    const isOverride = Array.from(urlParams.keys()).some((key) => key !== 'date' && key !== 'gallery');
 
     const flash = (message) => {
         setNotice(message);
@@ -102,19 +127,26 @@ function SingleCard(props) {
             .catch(() => flash('Não deu para copiar — selecione o texto abaixo.'));
     };
 
-    const shuffle = () => props.navigate({ date: urlDate, seed: randomSeed() });
+    const copyLink = () => {
+        copyText(window.location.href)
+            .then(() => flash('Link desta versão copiado.'))
+            .catch(() => flash('Não deu para copiar o link.'));
+    };
+
+    // A new movie keeps the "what to show" choices, but not text/framing tuned for the old one.
+    const shuffle = () => props.navigate({ date: urlDate, seed: randomSeed(), hide: urlParams.get('hide') });
     const backToDaily = () => props.navigate({ date: urlDate });
     const desktop = window.innerWidth > 900;
 
     return (
         <div className="fp-layout">
-            <div>
+            <div className="fp-preview-col">
                 {state.status === 'loading' ? <div className="fp-status">Montando o card…</div> : null}
                 {state.status === 'error' ? (
                     <div className="fp-status fp-error" role="alert">{state.error}</div>
                 ) : null}
                 {model ? (
-                    <ScaledCard model={model} cardRef={cardRef} maxHeight={desktop ? viewportHeight - 110 : null} />
+                    <ScaledCard model={model} cardRef={cardRef} maxHeight={desktop ? viewportHeight - 40 : null} />
                 ) : null}
             </div>
 
@@ -141,9 +173,14 @@ function SingleCard(props) {
                         {busy === 'share' ? 'Preparando…' : 'Compartilhar imagem'}
                     </button>
                 ) : null}
-                <button type="button" className="fp-button" onClick={copyCaption} disabled={!model}>
-                    Copiar legenda
-                </button>
+                <div className="fp-button-row">
+                    <button type="button" className="fp-button" onClick={copyCaption} disabled={!model}>
+                        Copiar legenda
+                    </button>
+                    <button type="button" className="fp-button" onClick={copyLink}>
+                        Copiar link
+                    </button>
+                </div>
                 <div className="fp-button-row">
                     <button type="button" className="fp-button" onClick={shuffle}>
                         Sortear outro
@@ -154,6 +191,17 @@ function SingleCard(props) {
                 </div>
                 <div className="fp-notice" aria-live="polite">{notice}</div>
 
+                {model ? (
+                    <Controls
+                        request={request}
+                        movie={model.movie}
+                        hasPoster={model.assets.hasPoster}
+                        plannedVariation={state.base.plan.variation}
+                        variation={model.variation}
+                        update={props.update}
+                    />
+                ) : null}
+
                 <div className="fp-label">Legenda</div>
                 <textarea className="fp-caption" readOnly value={caption} aria-label="Legenda do post" />
             </aside>
@@ -162,7 +210,7 @@ function SingleCard(props) {
 }
 
 export function CardApp() {
-    const [search, navigate] = useLocationSearch();
+    const [search, navigate, update] = useLocationSearch();
     const request = readRequest(search);
     const dateParam = new URLSearchParams(search).get('date');
 
@@ -181,7 +229,7 @@ export function CardApp() {
             {request.gallery ? (
                 <Gallery key={search} request={request} />
             ) : (
-                <SingleCard request={request} search={search} navigate={navigate} />
+                <SingleCard request={request} search={search} navigate={navigate} update={update} />
             )}
         </div>
     );

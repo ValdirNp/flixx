@@ -7,6 +7,7 @@ import { AA_TEXT, brandAccent, contrastRatio, resolveAccent } from './color';
 import { resolveBackground, mix } from './backgrounds';
 import { getLayout, LAYOUTS } from './layouts';
 import { BrandFooter } from './parts';
+import { DisplayContext, DEFAULT_DISPLAY } from './display';
 
 export const CARD_WIDTH = 1080;
 export const CARD_HEIGHT = 1350;
@@ -75,32 +76,34 @@ export function Card(props) {
     };
 
     return (
-        <div
-            className="fc-card"
-            ref={props.innerRef}
-            style={style}
-            data-layout={layout.id}
-            data-background={colors.background.id}
-            data-accent={colors.accent.source}
-        >
-            <div className="fc-bg">
-                <Background assets={model.assets} accentFill={colors.accent.fill} />
-                {colors.dim > 0 ? (
-                    <div className="fc-layer" style={{ background: 'rgba(14, 13, 12, ' + colors.dim.toFixed(2) + ')' }} />
+        <DisplayContext.Provider value={model.display || DEFAULT_DISPLAY}>
+            <div
+                className="fc-card"
+                ref={props.innerRef}
+                style={style}
+                data-layout={layout.id}
+                data-background={colors.background.id}
+                data-accent={colors.accent.source}
+            >
+                <div className="fc-bg">
+                    <Background assets={model.assets} accentFill={colors.accent.fill} />
+                    {colors.dim > 0 ? (
+                        <div className="fc-layer" style={{ background: 'rgba(14, 13, 12, ' + colors.dim.toFixed(2) + ')' }} />
+                    ) : null}
+                </div>
+                {Bleed ? (
+                    <div className="fc-bleed">
+                        <Bleed {...layoutProps} />
+                    </div>
                 ) : null}
-            </div>
-            {Bleed ? (
-                <div className="fc-bleed">
-                    <Bleed {...layoutProps} />
+                <div className="fc-scrim" />
+                <div className="fc-safe">
+                    <div className="fc-main">
+                        <Content {...layoutProps} />
+                    </div>
+                    <BrandFooter logoPos={model.variation.logoPos} />
                 </div>
-            ) : null}
-            <div className="fc-scrim" />
-            <div className="fc-safe">
-                <div className="fc-main">
-                    <Content {...layoutProps} />
-                </div>
-                <BrandFooter logoPos={model.variation.logoPos} />
             </div>
-        </div>
+        </DisplayContext.Provider>
     );
 }

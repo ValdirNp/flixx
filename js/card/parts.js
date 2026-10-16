@@ -1,7 +1,9 @@
 /**
  * Building blocks shared by every layout. They encode the fixed hierarchy:
  * title > year/rating > genres > synopsis > Flixx brand.
+ * Optional fields honor the display options (display.js); the footer never does.
  */
+import { useDisplay, isShown, cardText } from './display';
 
 export const SITE_URL = 'flixx.netlify.app';
 
@@ -112,6 +114,10 @@ export function FitText(props) {
 }
 
 export function Kicker(props) {
+    const display = useDisplay();
+    if (!isShown(display, 'kicker')) {
+        return null;
+    }
     return (
         <div className={'fc-kicker' + (props.boxed ? ' fc-kicker--boxed' : '')} style={props.style}>
             {props.children || 'Filme do dia'}
@@ -152,13 +158,20 @@ export function InlineRating(props) {
 
 /** Year · runtime · (inline rating). `showRating` is false when the rating is a corner badge. */
 export function MetaRow(props) {
-    const runtime = formatRuntime(props.movie.runtime);
-    const items = [<span key="year" className="fc-year">{props.movie.release_year}</span>];
+    const display = useDisplay();
+    const runtime = isShown(display, 'runtime') ? formatRuntime(props.movie.runtime) : null;
+    const items = [];
+    if (isShown(display, 'year')) {
+        items.push(<span key="year" className="fc-year">{props.movie.release_year}</span>);
+    }
     if (runtime) {
         items.push(<span key="runtime">{runtime}</span>);
     }
-    if (props.showRating && formatRating(props.movie)) {
+    if (props.showRating && isShown(display, 'rating') && formatRating(props.movie)) {
         items.push(<InlineRating key="rating" movie={props.movie} />);
+    }
+    if (!items.length) {
+        return null;
     }
 
     return (
@@ -175,8 +188,9 @@ export function MetaRow(props) {
 }
 
 export function GenreChips(props) {
+    const display = useDisplay();
     const names = genreNames(props.movie, props.limit);
-    if (!names.length) {
+    if (!names.length || !isShown(display, 'genres')) {
         return null;
     }
     const style = props.chipStyle || 'outline';
@@ -198,24 +212,83 @@ export function GenreChips(props) {
     );
 }
 
+const TRAILING_PUNCTUATION = /[\s.,;:!?…–—-]+$/;
+
+/**
+ * Longest whole-word prefix of `text` (with an ellipsis when cut) that fits `lines` lines of `el`.
+ * Measures on a hidden clone so React keeps ownership of the real text node.
+ */
+function fitParagraph(el, text, lines) {
+    const clone = el.cloneNode(false);
+    clone.style.position = 'absolute';
+    clone.style.visibility = 'hidden';
+    clone.style.left = '0';
+    clone.style.top = '0';
+    clone.style.width = el.clientWidth + 'px';
+    clone.style.display = 'block';
+    clone.style.webkitLineClamp = 'none';
+    el.parentNode.appendChild(clone);
+
+    const lineHeight = parseFloat(window.getComputedStyle(el).lineHeight);
+    const maxHeight = lines * lineHeight + 2;
+    const fits = (value) => {
+        clone.textContent = value;
+        return clone.scrollHeight <= maxHeight;
+    };
+
+    let result = text;
+    if (!fits(text)) {
+        const words = text.split(' ');
+        let lo = 1;
+        let hi = words.length - 1;
+        result = words[0] + '…';
+        while (lo <= hi) {
+            const mid = Math.floor((lo + hi) / 2);
+            const candidate = words.slice(0, mid).join(' ').replace(TRAILING_PUNCTUATION, '') + '…';
+            if (fits(candidate)) {
+                result = candidate;
+                lo = mid + 1;
+            } else {
+                hi = mid - 1;
+            }
+        }
+    }
+
+    el.parentNode.removeChild(clone);
+    return result;
+}
+
+/** Text block (synopsis, tagline or custom text): fills up to `lines` lines, cut at a whole word. */
 export function Synopsis(props) {
-    const text = shortenText(props.movie.overview, props.maxLength);
-    if (!text) {
+    const display = useDisplay();
+    const ref = React.useRef(null);
+    const full = cardText(props.movie, display).replace(/\s+/g, ' ').trim();
+    const [shown, setShown] = React.useState(full);
+
+    React.useLayoutEffect(() => {
+        if (ref.current && full) {
+            setShown(fitParagraph(ref.current, full, props.lines));
+        }
+    }, [full, props.lines]);
+
+    if (!full) {
         return null;
     }
     return (
         <p
+            ref={ref}
             className={'fc-synopsis' + (props.center ? ' fc-center' : '')}
             style={Object.assign({ WebkitLineClamp: props.lines }, props.style)}
         >
-            {text}
+            {shown}
         </p>
     );
 }
 
 export function RatingBadge(props) {
+    const display = useDisplay();
     const rating = formatRating(props.movie);
-    if (!rating) {
+    if (!rating || !isShown(display, 'rating')) {
         return null;
     }
     return (
@@ -265,11 +338,38 @@ export function PosterFrame(props) {
             style={Object.assign({ width: props.width, height: props.height }, props.style)}
         >
             {props.assets.hasPoster ? (
-                <img src={props.assets.posterUrl} alt="" />
+                <PosterImage assets={props.assets} />
             ) : (
                 <PosterFallback movie={props.movie} width={props.width} />
             )}
             {props.badge ? <RatingBadge movie={props.movie} style={badgeStyle} /> : null}
+        </div>
+    );
+}
+
+/**
+ * Poster image filling its (positioned) container, framed by the display options:
+ * fit=cover crops around the focal point (px/py); fit=contain shows the whole poster over its blur.
+ * `defaultX`/`defaultY` are the layout's focal point when the user hasn't set one.
+ */
+export function PosterImage(props) {
+    const display = useDisplay();
+    const x = display.px === null ? (props.defaultX || 50) : display.px;
+    const y = display.py === null ? (props.defaultY || 50) : display.py;
+    const position = x + '% ' + y + '%';
+
+    if (display.fit === 'contain') {
+        return (
+            <div className="fc-media">
+                <img className="fc-media-img" src={props.assets.blurUrl || props.assets.posterUrl} alt="" style={{ objectFit: 'cover' }} />
+                <img className="fc-media-img" src={props.assets.posterUrl} alt="" style={{ objectFit: 'contain', objectPosition: position }} />
+            </div>
+        );
+    }
+
+    return (
+        <div className="fc-media">
+            <img className="fc-media-img" src={props.assets.posterUrl} alt="" style={{ objectFit: 'cover', objectPosition: position }} />
         </div>
     );
 }

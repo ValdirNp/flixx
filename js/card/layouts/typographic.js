@@ -19,7 +19,7 @@ function Content(props) {
                 <div className="fc-col" style={{ flex: 1, minWidth: 0, paddingLeft: 52 }}>
                     <MetaRow movie={props.movie} showRating={inline} />
                     <GenreChips movie={props.movie} chipStyle={props.variation.chipStyle} style={{ marginTop: 16 }} />
-                    <Synopsis movie={props.movie} maxLength={200} lines={6} style={{ marginTop: 20 }} />
+                    <Synopsis movie={props.movie} lines={6} style={{ marginTop: 20 }} />
                 </div>
             </div>
         </div>

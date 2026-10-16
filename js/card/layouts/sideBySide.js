@@ -17,7 +17,7 @@ function Content(props) {
                     <Title movie={props.movie} max={120} min={56} maxLines={4} maxHeight={430} />
                     <MetaRow movie={props.movie} showRating={inline} style={{ marginTop: 18 }} />
                     <GenreChips movie={props.movie} chipStyle={props.variation.chipStyle} style={{ marginTop: 18 }} />
-                    <Synopsis movie={props.movie} maxLength={220} lines={7} style={{ marginTop: 22 }} />
+                    <Synopsis movie={props.movie} lines={7} style={{ marginTop: 22 }} />
                 </div>
             </div>
         </div>

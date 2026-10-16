@@ -40,7 +40,7 @@ function Content(props) {
                 </div>
                 <div className="fc-ticket-perforation" />
                 <div className="fc-ticket-stub">
-                    <Synopsis movie={props.movie} maxLength={180} lines={4} />
+                    <Synopsis movie={props.movie} lines={4} />
                     <div className="fc-ticket-info">
                         <span><b>Sessão</b> {formatDateBR(props.dateKey)}</span>
                         <span><b>Sala</b> {seat.room}</span>

@@ -7,6 +7,8 @@
  *   ?layout=<id>       forces a layout       (see layouts/index.js)
  *   ?theme=<id>        forces a background   (blur | gradient | solid | beam)
  *   ?accent=<id>       forces the accent     (poster | brand)
+ *   ?rating= ?chips= ?logo=   force the detail axes (see variation.js)
+ *   display options (hide, text, txt, fit, px, py): see display.js
  *   ?gallery=1|random|matrix|stress  review grids (see Gallery.js); &n= count, &cols= columns
  */
 import { todayKey, isValidDateKey } from './date';
@@ -14,6 +16,7 @@ import { planForDate, planForSeed } from './daily';
 import { applyOverrides } from './variation';
 import { fetchMovieById, resolveMovieIdForSlot } from './movie';
 import { loadPosterAssets } from './poster';
+import { readDisplay, DEFAULT_DISPLAY } from './display';
 
 const DAILY_CACHE_PREFIX = 'flixx-card:';
 
@@ -29,7 +32,11 @@ export function readRequest(search) {
             layout: params.get('layout'),
             theme: params.get('theme'),
             accent: params.get('accent'),
+            rating: params.get('rating'),
+            chips: params.get('chips'),
+            logo: params.get('logo'),
         },
+        display: readDisplay(params),
         gallery: params.get('gallery'),
         count: Number(params.get('n')) || 0,
         cols: Math.min(Number(params.get('cols')) || 0, 8),
@@ -89,7 +96,8 @@ export function resolveCardModel(request) {
             dateKey: request.dateKey,
             movie: movie,
             assets: assets,
-            variation: applyOverrides(plan.variation, request.overrides),
+            variation: applyOverrides(plan.variation, request.overrides || {}),
+            display: request.display || DEFAULT_DISPLAY,
         })));
 }
 

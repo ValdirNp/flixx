@@ -1,11 +1,11 @@
-import { Kicker, Title, MetaRow, GenreChips, Synopsis, RatingBadge, PosterFallback } from '../parts';
+import { Kicker, Title, MetaRow, GenreChips, Synopsis, RatingBadge, PosterFallback, PosterImage } from '../parts';
 
 /** Full-height poster strip on the right, darkened toward the text side. */
 function Bleed(props) {
     return (
         <div className="fc-strip">
             {props.assets.hasPoster ? (
-                <img className="fc-layer-img" src={props.assets.posterUrl} alt="" />
+                <PosterImage assets={props.assets} />
             ) : (
                 <PosterFallback movie={props.movie} width={497} decorative />
             )}
@@ -44,7 +44,7 @@ function Content(props) {
                 <div style={{ width: 470 }}>
                     <MetaRow movie={props.movie} showRating={inline} style={{ marginTop: 22 }} />
                     <GenreChips movie={props.movie} chipStyle={props.variation.chipStyle} style={{ marginTop: 16 }} />
-                    <Synopsis movie={props.movie} maxLength={200} lines={6} style={{ marginTop: 18 }} />
+                    <Synopsis movie={props.movie} lines={6} style={{ marginTop: 18 }} />
                 </div>
             </div>
             {inline ? null : <RatingBadge movie={props.movie} style={badgeStyle} />}

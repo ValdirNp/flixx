@@ -15,6 +15,10 @@ export const RATING_POSITIONS = ['inline', 'corner-left', 'corner-right'];
 export const CHIP_STYLES = ['outline', 'filled', 'label'];
 export const LOGO_POSITIONS = ['left', 'right', 'center'];
 
+export const RATING_LABELS = { inline: 'Na linha de info', 'corner-left': 'Selo à esquerda', 'corner-right': 'Selo à direita' };
+export const CHIP_LABELS = { outline: 'Contorno', filled: 'Preenchido', label: 'Rótulo' };
+export const LOGO_LABELS = { left: 'Logo à esquerda', right: 'Logo à direita', center: 'Logo ao centro' };
+
 /**
  * Picks every axis for a seed. Layouts in `recentLayouts` (the previous days) are excluded,
  * so consecutive days never share a layout.
@@ -36,7 +40,7 @@ export function chooseVariation(seed, recentLayouts) {
     };
 }
 
-/** Applies ?layout= / ?theme= / ?accent= overrides (ignored when unknown). */
+/** Applies ?layout= ?theme= ?accent= ?rating= ?chips= ?logo= overrides (ignored when unknown). */
 export function applyOverrides(variation, overrides) {
     const next = Object.assign({}, variation);
     if (overrides.layout && getLayout(overrides.layout)) {
@@ -47,6 +51,15 @@ export function applyOverrides(variation, overrides) {
     }
     if (overrides.accent && ACCENT_MODES.some((mode) => mode.id === overrides.accent)) {
         next.accent = overrides.accent;
+    }
+    if (RATING_POSITIONS.includes(overrides.rating)) {
+        next.ratingPos = overrides.rating;
+    }
+    if (CHIP_STYLES.includes(overrides.chips)) {
+        next.chipStyle = overrides.chips;
+    }
+    if (LOGO_POSITIONS.includes(overrides.logo)) {
+        next.logoPos = overrides.logo;
     }
     return next;
 }

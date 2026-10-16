@@ -248,8 +248,8 @@ body {
     display: -webkit-box;
     margin: 0;
     overflow: hidden;
-    font-size: 26px;
-    line-height: 1.5;
+    font-size: 30px;
+    line-height: 1.45;
     color: var(--text-1);
     -webkit-box-orient: vertical;
 }
@@ -270,6 +270,19 @@ body {
     border-radius: var(--flx-radius);
     background: var(--flx-paper);
     box-shadow: 0 30px 70px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(245, 240, 232, 0.1);
+}
+
+.fc-media,
+.fc-media-img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.fc-media-img {
+    display: block;
 }
 
 .fc-poster > img {
@@ -694,4 +707,121 @@ body {
         radial-gradient(ellipse 80% 60% at 70% 30%, rgba(229, 9, 20, 0.18), transparent 60%),
         repeating-linear-gradient(135deg, rgba(245, 240, 232, 0.04) 0 2px, transparent 2px 28px),
         linear-gradient(160deg, var(--flx-paper) 0%, var(--flx-ink) 100%);
+}
+
+/* ---------- Tool page: live controls ---------- */
+
+@media (min-width: 901px) {
+    .fp-preview-col {
+        position: sticky;
+        top: 20px;
+        align-self: start;
+    }
+}
+
+.fp-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.fp-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    font-size: 13px;
+    color: var(--flx-muted);
+}
+
+
+.fp-select {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid var(--flx-line);
+    border-radius: 4px;
+    background: var(--flx-paper);
+    color: var(--flx-cream);
+    font-family: var(--flx-font-body);
+    font-size: 14px;
+}
+
+.fp-field input[type="range"] {
+    width: 100%;
+    accent-color: var(--flx-red);
+}
+
+.fp-checks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.fp-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border: 1px solid var(--flx-line);
+    border-radius: 4px;
+    color: var(--flx-muted);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.fp-check.is-on {
+    border-color: rgba(245, 240, 232, 0.4);
+    background: rgba(245, 240, 232, 0.08);
+    color: var(--flx-cream);
+}
+
+.fp-check input {
+    margin: 0;
+    accent-color: var(--flx-red);
+}
+
+.fp-seg {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.fp-seg-item {
+    flex: 1 1 auto;
+    padding: 8px 10px;
+    border: 1px solid var(--flx-line);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--flx-muted);
+    font-family: var(--flx-font-body);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.fp-seg-item.is-active {
+    border-color: var(--flx-red);
+    background: var(--flx-red);
+    color: var(--flx-cream);
+}
+
+.fp-seg-item:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.fp-hint {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--flx-muted);
+}
+
+.fp-custom-text {
+    min-height: 120px;
+}
+
+.fp-button--small {
+    padding: 8px 12px;
+    font-size: 13px;
 }
